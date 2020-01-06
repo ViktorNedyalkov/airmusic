@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -78,7 +79,7 @@ Minimum eight in length .{8,} (with the anchors)
         resp.addProperty("Status","200");
         resp.addProperty("msg","User is registered");
         return resp.toString();
-    }
+    }//// TODO: 6.1.2020 г. send mail
     @PostMapping("/login")//ok
     public String loginUser(@RequestBody LoginUserDTO dto,HttpSession session) throws IOException {
         JsonObject resp = new JsonObject();
@@ -94,9 +95,34 @@ Minimum eight in length .{8,} (with the anchors)
 
         return "Successfully login";
     }
+    @PostMapping("/users/follow/{id}")
+    public String followUser(HttpSession session,@PathVariable("id") long id) throws SQLException {
+        User user = (User) session.getAttribute("logged");
+        if(user == null){
+            return "Please, login";
+            //throw exception
+        }
+        User followedUser = repo.findById(id);
+        UserDao.followUser(user,followedUser);
+        return user.toString();
+    }
 
+    //GET MAPPINGS
     @GetMapping("/getItAll")
     public List<User> getAll(){
         return repo.findAll();
+    }
+
+    //not mappings
+    private User loggedUser(HttpSession session){
+        User user= (User) session.getAttribute("logged");
+        return user;
+    }
+
+    //Exception handler
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already followed")
+    @ExceptionHandler({SQLException.class})
+    public void  handleException(){
+
     }
 }

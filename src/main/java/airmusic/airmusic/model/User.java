@@ -1,21 +1,17 @@
 package airmusic.airmusic.model;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
-
+@ToString
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
@@ -30,6 +26,26 @@ public class User {
     private String gender;
     private String birthDate;
 
+//    @JsonIgnore
+//    @ManyToMany
+//    @JoinTable(
+//            name = "users_follow_users",
+//            joinColumns = @JoinColumn(name = "follower_id"),
+//            inverseJoinColumns = @JoinColumn(name = "followed_id"))
+//    private List<User> followers;
+//    @JsonIgnore
+//    @ManyToMany
+//    @JoinTable(
+//            name = "users_follow_users",
+//            joinColumns = @JoinColumn(name = "followed_id"),
+//            inverseJoinColumns = @JoinColumn(name = "follower_id"))
+//    private List<User> following;
+
+    public User() {
+        //followers = new ArrayList<>();
+        //following = new ArrayList<>();
+    }
+
     public User(long id, String email, String firstName, String lastName, String gender, String birthDate) {
         this.id = id;
         this.email = email;
@@ -39,11 +55,14 @@ public class User {
         this.birthDate = birthDate;
     }
 
-    public int setGenderID(String gender)  {
-        if(gender.equals("male")){
+    public void addToFollowers(User user){
+       // this.followers.add(user);
+    }
+    public int setGenderID(String gender) {
+        if (gender.equals("male")) {
             return 1;
         }
-        if (gender.equals("female")){
+        if (gender.equals("female")) {
             return 2;
         }
         return 3;

@@ -16,21 +16,12 @@ public class UserDao {
 
     }
 
-    public static void addUserToDB(User user) throws SQLException {
-        String sql = "INSERT INTO users(email,password,first_name,last_name,gender_id,birth_date) VALUES (?,?,?,?,?,?)";
+    public static void followUser(User follower,User folllowing) throws SQLException {
+        String sql = "INSERT INTO users_follow_users VALUES(?,?);";
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1,user.getEmail());
-            ps.setString(2,user.getPassword());//todo discus if its in the DB or in different FILE
-            ps.setString(3,user.getFirstName());
-            ps.setString(4,user.getLastName());
-            ps.setInt(5,user.setGenderID(user.getGender()));
-            ps.setDate(6, Date.valueOf(LocalDate.parse(user.getBirthDate())));
+            ps.setLong(1,follower.getId());
+            ps.setLong(2,folllowing.getId());
             ps.executeUpdate();
-            ResultSet rs = ps.getGeneratedKeys();
-            if (rs.next()){
-                long id = rs.getLong(1);
-                user.setId(id);
-            }
         } catch (SQLException e) {
             throw e;
         }
