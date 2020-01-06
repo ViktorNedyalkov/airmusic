@@ -49,4 +49,18 @@ public class UserDao {
             throw new NoAccessException();
         }
     }
+    public  List<User> getFollowing(User user) throws NoAccessException {
+        String sql = "SELECT followed_id FROM users_follow_users WHERE follower_id =?";
+        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(sql)) {
+            ps.setLong(1,user.getId());
+            ResultSet rs = ps.executeQuery();
+            List<User> followers = new ArrayList<>();
+            while (rs.next()){
+                followers.add(repo.findById(rs.getLong(1)));
+            }
+            return followers;
+        } catch (SQLException e) {
+            throw new NoAccessException();
+        }
+    }
 }

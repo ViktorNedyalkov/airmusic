@@ -122,6 +122,11 @@ Minimum eight in length .{8,} (with the anchors)
         User user =  validateUser(session);
         return dao.getFollowers(user);
     }
+    @GetMapping("/users/following")
+    public List<User> getFollowing(HttpSession session) throws NotLoggedUserException, NoAccessException {
+        User user =  validateUser(session);
+        return dao.getFollowing(user);
+    }
     //not mappings
     private User validateUser(HttpSession session) throws NotLoggedUserException {
         User user= (User) session.getAttribute("logged");
