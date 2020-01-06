@@ -1,23 +1,23 @@
 package airmusic.airmusic.controller;
 
 import airmusic.airmusic.model.DAO.UserDao;
+import airmusic.airmusic.model.DTO.LoginUserDTO;
+import airmusic.airmusic.model.DTO.RegisterUserDTO;
 import airmusic.airmusic.model.User;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.google.gson.JsonElement;
+import airmusic.airmusic.model.repositories.UserRepository;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.springframework.http.HttpRequest;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
+
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.List;
+
 
 @RestController
 public class UserController {
@@ -30,59 +30,73 @@ At least one special character, (?=.*?[#?!@$%^&*-])
 Minimum eight in length .{8,} (with the anchors)
      */
     private static final String EMAIL_REGEX = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;//TODO check this. Not sure we need it at all
+
+    @Autowired
+    private UserRepository repo;
     @PostMapping("/register")
-    @ResponseBody
-    public String registerUser(HttpServletRequest request) throws IOException, SQLException {
+    public String registerUser(@RequestBody RegisterUserDTO dto) throws IOException, SQLException {
         JsonObject resp = new JsonObject();
-        JsonObject object = JsonParser.parseReader(request.getReader()).getAsJsonObject();
-        System.out.println(object.toString());
-        String email = object.get("email").getAsString();
-        String password1 = object.get("password1").getAsString();
-        String password2 = object.get("password2").getAsString();
-        String firstName = object.get("firstName").getAsString();
-        String lastName = object.get("lastName").getAsString();
-        String gender = object.get("gender").getAsString();
-        String birthDate = object.get("birthDate").getAsString();
-        if (!password1.equals(password2)){
+        if (!dto.getConfirmPassword().equals(dto.getPassword())){
             resp.addProperty("Status","400");
             resp.addProperty("msg","Passwords do not match");
             return resp.toString();
         }
-        if (!password1.matches(PASSWORD_REGEX)){
+        if (!dto.getPassword().matches(PASSWORD_REGEX)){
             resp.addProperty("Status","400");
             resp.addProperty("msg","Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
             return resp.toString();
         }
-        if (!email.matches(EMAIL_REGEX)){
+        if (!dto.getEmail().matches(EMAIL_REGEX)){
             resp.addProperty("Status","400");
             resp.addProperty("msg","Not a valid e-mail");
             return resp.toString();
         }
-        if (email.isEmpty()
-                ||password1.isEmpty()
-                ||password2.isEmpty()
-                ||firstName.isEmpty()
-                ||lastName.isEmpty()
-                ||gender.isEmpty()
-                ||birthDate.isEmpty()){
+        if (dto.getEmail().isEmpty()
+                ||dto.getPassword().isEmpty()
+                ||dto.getConfirmPassword().isEmpty()
+                ||dto.getFirstName().isEmpty()
+                ||dto.getLastName().isEmpty()
+                ||dto.getGender().isEmpty()
+                ||dto.getBirthDate().isEmpty()){
             resp.addProperty("Status","400");
             resp.addProperty("msg","Fill all fields");
             return resp.toString();
         }
-        if (UserDao.doesExist(email)){
+        if (UserDao.doesExist(dto.getEmail())){
             resp.addProperty("Status","400");
             resp.addProperty("msg","User already exist with this email");
             return resp.toString();
         }
-        User user = new User();
-        user.setBirthDate(birthDate);
-        user.setLastName(lastName);
-        user.setFirstName(firstName);
-        user.setEmail(email);
-        user.setGender(gender);
-        UserDao.addUserToDB(user);
+        User user =dto.toUser();
+        //users gender to be converted to gender_id
+
+        repo.save(user);
+       // UserDao.addUserToDB(dto.toUser());
         resp.addProperty("Status","200");
         resp.addProperty("msg","User is registered");
         return resp.toString();
+    }
+    @PostMapping("/login")//ok
+    public String loginUser(@RequestBody LoginUserDTO dto,HttpSession session) throws IOException {
+        JsonObject resp = new JsonObject();
+        String email = dto.getEmail();
+        String pass =dto.getPassword();
+        User user = repo.findByEmail(email);
+        if (user ==null || !user.getPassword().equals(pass)){
+            resp.addProperty("status", "401");
+            resp.addProperty("msg", "wrong email or password");
+            return resp.toString();
+        }
+        session.setAttribute("logged",user);
+
+        return "Successfully login";
+    }
+
+    @GetMapping("/getItAll")
+    public List<User> getAll(){
+        return repo.findAll();
     }
 }
