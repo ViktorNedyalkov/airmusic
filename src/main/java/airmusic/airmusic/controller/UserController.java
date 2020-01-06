@@ -3,6 +3,7 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.exceptions.FollowUserException;
 import airmusic.airmusic.exceptions.NoAccessException;
 import airmusic.airmusic.exceptions.NotLoggedUserException;
+import airmusic.airmusic.exceptions.UserAlreadyExistsException;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.LoginUserDTO;
 import airmusic.airmusic.model.DTO.RegisterUserDTO;
@@ -26,7 +27,7 @@ import java.util.List;
 
 @RestController
 public class UserController {
-    private static final String PASSWORD_REGEX = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-_]).{8,}$ ";
+    private static final String PASSWORD_REGEX =  "^(?=.*[0-9])(?=.*?[#?!@$%^&*-])(?=.*[a-zA-Z]).{8,}$";;
     /*
     At least one upper case English letter, (?=.*?[A-Z])
 At least one lower case English letter, (?=.*?[a-z])
@@ -101,6 +102,21 @@ Minimum eight in length .{8,} (with the anchors)
 
         return "Successfully login";
     }
+    @PostMapping("/users/update")
+    public User updateUser(HttpSession session,@RequestBody RegisterUserDTO updatedUser) throws NotLoggedUserException, SQLException, UserAlreadyExistsException {
+        User user = validateUser(session);
+        if (dao.doesExist(updatedUser.getEmail())){
+            throw new UserAlreadyExistsException();
+        }
+        user.setEmail(updatedUser.getEmail());
+        user.setPassword(updatedUser.getPassword());
+        user.setFirstName(updatedUser.getFirstName());
+        user.setLastName(updatedUser.getLastName());
+        user.setGender(updatedUser.getGender());
+        user.setBirthDate(updatedUser.getBirthDate());
+        repo.save(user);
+        return user;
+    }
     @PostMapping("/users/follow/{id}")
     public User followUser(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, FollowUserException {
         User user = (User) session.getAttribute("logged");
@@ -140,6 +156,10 @@ Minimum eight in length .{8,} (with the anchors)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already followed")
     @ExceptionHandler({FollowUserException.class})
     public void  handleException(){
+    }
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already exist with this email")
+    @ExceptionHandler({UserAlreadyExistsException.class})
+    public void  userAlreadyExistHandler(){
     }
     @ResponseStatus(value = HttpStatus.UNAUTHORIZED,reason = "please login")
     @ExceptionHandler({NotLoggedUserException.class})
