@@ -1,11 +1,15 @@
 package airmusic.airmusic.controller;
 
+import airmusic.airmusic.exceptions.FollowUserException;
+import airmusic.airmusic.exceptions.NoAccessException;
+import airmusic.airmusic.exceptions.NotLoggedUserException;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.LoginUserDTO;
 import airmusic.airmusic.model.DTO.RegisterUserDTO;
 import airmusic.airmusic.model.User;
 import airmusic.airmusic.model.repositories.UserRepository;
 import com.google.gson.JsonObject;
+
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +26,7 @@ import java.util.List;
 
 @RestController
 public class UserController {
-    private static final String PASSWORD_REGEX = "vasko";//"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-_]).{8,}$ ";
+    private static final String PASSWORD_REGEX = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-_]).{8,}$ ";
     /*
     At least one upper case English letter, (?=.*?[A-Z])
 At least one lower case English letter, (?=.*?[a-z])
@@ -34,12 +38,14 @@ Minimum eight in length .{8,} (with the anchors)
 
     @Autowired
     private JdbcTemplate jdbcTemplate;//TODO check this. Not sure we need it at all
-
+    @Autowired
+    private UserDao dao;
     @Autowired
     private UserRepository repo;
     @PostMapping("/register")
     public String registerUser(@RequestBody RegisterUserDTO dto) throws IOException, SQLException {
         JsonObject resp = new JsonObject();
+        System.out.println(dto.toString());
         if (!dto.getConfirmPassword().equals(dto.getPassword())){
             resp.addProperty("Status","400");
             resp.addProperty("msg","Passwords do not match");
@@ -66,7 +72,7 @@ Minimum eight in length .{8,} (with the anchors)
             resp.addProperty("msg","Fill all fields");
             return resp.toString();
         }
-        if (UserDao.doesExist(dto.getEmail())){
+        if (dao.doesExist(dto.getEmail())){
             resp.addProperty("Status","400");
             resp.addProperty("msg","User already exist with this email");
             return resp.toString();
@@ -75,7 +81,7 @@ Minimum eight in length .{8,} (with the anchors)
         //users gender to be converted to gender_id
 
         repo.save(user);
-       // UserDao.addUserToDB(dto.toUser());
+       // dao.addUserToDB(dto.toUser());
         resp.addProperty("Status","200");
         resp.addProperty("msg","User is registered");
         return resp.toString();
@@ -96,15 +102,14 @@ Minimum eight in length .{8,} (with the anchors)
         return "Successfully login";
     }
     @PostMapping("/users/follow/{id}")
-    public String followUser(HttpSession session,@PathVariable("id") long id) throws SQLException {
+    public User followUser(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, FollowUserException {
         User user = (User) session.getAttribute("logged");
         if(user == null){
-            return "Please, login";
-            //throw exception
+            throw new NotLoggedUserException();
         }
         User followedUser = repo.findById(id);
-        UserDao.followUser(user,followedUser);
-        return user.toString();
+        dao.followUser(user,followedUser);
+        return user;
     }
 
     //GET MAPPINGS
@@ -112,17 +117,32 @@ Minimum eight in length .{8,} (with the anchors)
     public List<User> getAll(){
         return repo.findAll();
     }
-
+    @GetMapping("/users/followers")
+    public List<User> getFollowers(HttpSession session) throws NotLoggedUserException, NoAccessException {
+        User user =  validateUser(session);
+        return dao.getFollowers(user);
+    }
     //not mappings
-    private User loggedUser(HttpSession session){
+    private User validateUser(HttpSession session) throws NotLoggedUserException {
         User user= (User) session.getAttribute("logged");
+        if (user ==null){
+            throw new NotLoggedUserException();
+        }
         return user;
     }
 
     //Exception handler
     @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already followed")
-    @ExceptionHandler({SQLException.class})
+    @ExceptionHandler({FollowUserException.class})
     public void  handleException(){
+    }
+    @ResponseStatus(value = HttpStatus.UNAUTHORIZED,reason = "please login")
+    @ExceptionHandler({NotLoggedUserException.class})
+    public void loggedExceptionHandler(){
+
+    } @ResponseStatus(value = HttpStatus.UNAUTHORIZED,reason = "access denied")
+    @ExceptionHandler({NoAccessException.class})
+    public void accessHandler(){
 
     }
 }
