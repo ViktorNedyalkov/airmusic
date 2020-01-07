@@ -4,10 +4,11 @@ import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.LoginUserDTO;
 import airmusic.airmusic.model.DTO.RegisterUserDTO;
+import airmusic.airmusic.model.Song;
 import airmusic.airmusic.model.User;
+import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
 import com.google.gson.JsonObject;
-
 
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -39,7 +41,9 @@ Minimum eight in length .{8,} (with the anchors)
     @Autowired
     private UserDao dao;
     @Autowired
-    private UserRepository repo;
+    private UserRepository userRepository;
+    @Autowired
+    private SongRepository songRepository;
     @PostMapping("/register")
     public String registerUser(@RequestBody RegisterUserDTO dto) throws IOException, SQLException {
         JsonObject resp = new JsonObject();
@@ -78,7 +82,7 @@ Minimum eight in length .{8,} (with the anchors)
         User user =dto.toUser();
         //users gender to be converted to gender_id
 
-        repo.save(user);
+        userRepository.save(user);
        // dao.addUserToDB(dto.toUser());
         resp.addProperty("Status","200");
         resp.addProperty("msg","User is registered");
@@ -89,7 +93,7 @@ Minimum eight in length .{8,} (with the anchors)
         JsonObject resp = new JsonObject();
         String email = dto.getEmail();
         String pass =dto.getPassword();
-        User user = repo.findByEmail(email);
+        User user = userRepository.findByEmail(email);
         if (user ==null || !user.getPassword().equals(pass)){
             resp.addProperty("status", "401");
             resp.addProperty("msg", "wrong email or password");
@@ -111,19 +115,31 @@ Minimum eight in length .{8,} (with the anchors)
         user.setLastName(updatedUser.getLastName());
         user.setGender(updatedUser.getGender());
         user.setBirthDate(updatedUser.getBirthDate());
-        repo.save(user);
+        userRepository.save(user);
         return user;
     }
     @PostMapping("/users/follow/{id}")
     public User followUser(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, FollowUserException {
+
         User user = (User) session.getAttribute("logged");
         if(user == null){
             throw new NotLoggedUserException();
         }
-        User followedUser = repo.findById(id);
+        User followedUser = userRepository.findById(id);
         dao.followUser(user,followedUser);
         return user;
     }
+    @PostMapping("/users/songs/like/{id}")
+    public Song likeSong(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, SongAlreadyLikedException {
+        User user = (User) session.getAttribute("logged");
+        if(user == null){
+            throw new NotLoggedUserException();
+        }
+        Song song = songRepository.findById(id);
+        dao.likeSong(user,song);
+        return song;
+    }
+
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
     public User unfollowUser(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException {
@@ -131,15 +147,25 @@ Minimum eight in length .{8,} (with the anchors)
         if(user == null){
             throw new NotLoggedUserException();
         }
-        User targetUser = repo.findById(id);
-        dao.unfollowUser(user,targetUser);
+        User targetUser = userRepository.findById(id);
+        dao.unFollowUser(user,targetUser);
         return user;
+    }
+    @DeleteMapping("/users/songs/dislike/{id}")
+    public Song dislikeSong(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException, NotLikedSongException {
+        User user = (User) session.getAttribute("logged");
+        if(user == null){
+            throw new NotLoggedUserException();
+        }
+        Song song = songRepository.findById(id);
+        dao.dislikeSong(user,song);
+        return song;
     }
 
     //GET MAPPINGS
     @GetMapping("/getItAll")
     public List<User> getAll(){
-        return repo.findAll();
+        return userRepository.findAll();
     }
     @GetMapping("/users/followers")
     public List<User> getFollowers(HttpSession session) throws NotLoggedUserException, NoAccessException {
@@ -150,6 +176,16 @@ Minimum eight in length .{8,} (with the anchors)
     public List<User> getFollowing(HttpSession session) throws NotLoggedUserException, NoAccessException {
         User user =  validateUser(session);
         return dao.getFollowing(user);
+    }
+    @GetMapping("/users/mySongs")
+    public List<Song> mySongs(HttpSession session) throws NotLoggedUserException {
+        User user = validateUser(session);
+        return songRepository.findAllByUploaderId(user.getId());
+    }
+    @GetMapping("/users/myFavouriteSongs")
+    public List<Song> myFavouriteSongs(HttpSession session) throws NotLoggedUserException {
+        User user = validateUser(session);
+        return dao.myFavouriteSongs(user);
     }
     //not mappings
     private User validateUser(HttpSession session) throws NotLoggedUserException {

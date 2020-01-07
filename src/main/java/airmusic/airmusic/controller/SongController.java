@@ -46,7 +46,7 @@ public class SongController {
 
     @GetMapping("/{id}/songs")
     public List<Song> getAllSongByUser(@PathVariable("id") long id){
-        return repo.findAllByUploaderId(id);
+        return repo.findAllByUploaderId(id);//TODO  tova ne trqbva li da e v user-a
     }
 
     //todo: taka li se pravi???!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
