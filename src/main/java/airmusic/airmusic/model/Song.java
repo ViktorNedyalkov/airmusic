@@ -3,17 +3,27 @@ package airmusic.airmusic.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
-import java.util.Date;
+import javax.persistence.*;
+import java.sql.Date;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@Entity
+@DynamicUpdate
+@Table(name = "tracks", schema = "airmusic")
 public class Song {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
-    private long uploader_id;
+    @OneToOne
+    @JoinColumn(name = "uploader_id")
+    private User uploader;
     private String description;
-    private int genre_id;
+    private long genre_id;
     private String title;
-    private Date date;//could be changed to sql date
+    private Date upload_date;//SQL DATE, maybe change later
 }

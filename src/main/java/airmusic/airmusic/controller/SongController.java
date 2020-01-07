@@ -50,7 +50,7 @@ public class SongController {
     }
 
     //todo: taka li se pravi???!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    @PutMapping("/users/{song_id}/edit")
+    @PutMapping("/user/song/{song_id}/edit")
     public Song editSongDescription(@PathVariable("song_id") long song_id, @RequestBody Map<String, String> bodyData){
         //fixme
         //validate if user is logged in
