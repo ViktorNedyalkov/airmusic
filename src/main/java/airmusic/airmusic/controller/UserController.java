@@ -1,9 +1,6 @@
 package airmusic.airmusic.controller;
 
-import airmusic.airmusic.exceptions.FollowUserException;
-import airmusic.airmusic.exceptions.NoAccessException;
-import airmusic.airmusic.exceptions.NotLoggedUserException;
-import airmusic.airmusic.exceptions.UserAlreadyExistsException;
+import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.LoginUserDTO;
 import airmusic.airmusic.model.DTO.RegisterUserDTO;
@@ -127,6 +124,17 @@ Minimum eight in length .{8,} (with the anchors)
         dao.followUser(user,followedUser);
         return user;
     }
+    //DELETE MAPPINGS
+    @DeleteMapping("/users/unfollow/{id}")
+    public User unfollowUser(HttpSession session,@PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException {
+        User user = (User) session.getAttribute("logged");
+        if(user == null){
+            throw new NotLoggedUserException();
+        }
+        User targetUser = repo.findById(id);
+        dao.unfollowUser(user,targetUser);
+        return user;
+    }
 
     //GET MAPPINGS
     @GetMapping("/getItAll")
@@ -156,6 +164,10 @@ Minimum eight in length .{8,} (with the anchors)
     @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already followed")
     @ExceptionHandler({FollowUserException.class})
     public void  handleException(){
+    }
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user is not followed")
+    @ExceptionHandler({UnFollowUserException.class})
+    public void  handleUnFollowUserException(){
     }
     @ResponseStatus(value = HttpStatus.BAD_REQUEST,reason = "user already exist with this email")
     @ExceptionHandler({UserAlreadyExistsException.class})
