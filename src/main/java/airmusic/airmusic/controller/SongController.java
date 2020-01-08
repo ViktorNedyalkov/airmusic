@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-public class SongController {
+public class SongController extends  AbstractController{
 
 
     @Autowired
@@ -106,14 +106,7 @@ public class SongController {
         //don't know if i should return anything
         return song;
     }
-    private User validateUser(HttpSession session) throws NotLoggedUserException {
 
-        return (User) session.getAttribute("logged");
-    }
 
-    @ResponseStatus(value = HttpStatus.UNAUTHORIZED,reason = "please login")
-    @ExceptionHandler({NotLoggedUserException.class})
-    public void loggedExceptionHandler(){
 
-    }
 }

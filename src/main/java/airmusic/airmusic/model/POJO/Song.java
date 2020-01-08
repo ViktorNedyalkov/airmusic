@@ -16,11 +16,11 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @DynamicUpdate
-@Table(name = "tracks", schema = "airmusic")
+@Table(name = "tracks", schema = "mydb")
 public class Song {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @OneToOne
     @JoinColumn(name = "uploader_id")
