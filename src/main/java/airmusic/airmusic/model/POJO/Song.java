@@ -29,5 +29,5 @@ public class Song {
     private long genre_id;
     private String title;
     private Date upload_date;//SQL DATE, maybe change later
-
+    private String track_url;
 }

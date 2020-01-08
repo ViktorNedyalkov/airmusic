@@ -211,6 +211,10 @@ Minimum eight in length .{8,} (with the anchors)
         return playlistRepository.findAllByCreator_Id(user.getId());
     }
 
+    @GetMapping("/{user_id}/songs")
+    public List<Song> getAllSongByUser(@PathVariable("user_id") long user_id){
+        return songRepository.findAllByUploaderId(user_id);
+    }
 
     //not mappings
     private User validateUser(HttpSession session) throws NotLoggedUserException {
