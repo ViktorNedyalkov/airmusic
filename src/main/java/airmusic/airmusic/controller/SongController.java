@@ -4,21 +4,30 @@ import airmusic.airmusic.exceptions.ForbiddenSongActionException;
 import airmusic.airmusic.exceptions.NotLoggedUserException;
 import airmusic.airmusic.exceptions.SongNotFoundException;
 import airmusic.airmusic.model.DAO.SongDao;
+import airmusic.airmusic.model.DTO.SongUploadDTO;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 public class SongController extends  AbstractController{
 
+    private static final String UPLOAD_PATH = "D:\\JAVA\\airmusic\\src\\main\\resources\\songs\\";
 
     @Autowired
     private SongDao dao;
@@ -45,9 +54,24 @@ public class SongController extends  AbstractController{
     }
 
     //post mappings
-    @PostMapping("/song")
-    public Song addSong(@RequestBody Song song){
-        //todo validate if user is logged in
+    @SneakyThrows
+    @PostMapping("/songs/upload")
+    public Song addSong(@RequestParam String description, @RequestParam String title, @RequestParam String genre_id, @RequestParam("song")MultipartFile file, HttpSession session){
+        //is user logged in
+        User uploader = validateUser(session);
+        byte[] fileBytes = file.getBytes();
+        String songUrl = UPLOAD_PATH + file.getOriginalFilename();
+        Path path = Paths.get(songUrl);
+        Files.write(path, fileBytes);
+
+        Song song = new Song();
+        song.setTitle(title);
+        song.setGenre_id(Long.valueOf(genre_id));
+        song.setDescription(description);
+        song.setTrack_url(songUrl + file.getOriginalFilename());
+        song.setUploader(uploader);
+        song.setUpload_date(new Date());
+
         songRepository.save(song);
         return song;
     }
