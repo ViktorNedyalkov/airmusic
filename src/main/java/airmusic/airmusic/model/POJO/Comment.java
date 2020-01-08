@@ -1,4 +1,4 @@
-package airmusic.airmusic.model;
+package airmusic.airmusic.model.POJO;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

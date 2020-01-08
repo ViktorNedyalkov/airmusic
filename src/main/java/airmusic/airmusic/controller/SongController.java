@@ -2,7 +2,7 @@ package airmusic.airmusic.controller;
 
 import airmusic.airmusic.exceptions.SongNotFoundException;
 import airmusic.airmusic.model.DAO.SongDao;
-import airmusic.airmusic.model.Song;
+import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.repositories.SongRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

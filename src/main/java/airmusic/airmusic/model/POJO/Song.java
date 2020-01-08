@@ -1,5 +1,6 @@
-package airmusic.airmusic.model;
+package airmusic.airmusic.model.POJO;
 
+import airmusic.airmusic.model.POJO.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,6 +8,8 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.sql.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -26,4 +29,5 @@ public class Song {
     private long genre_id;
     private String title;
     private Date upload_date;//SQL DATE, maybe change later
+
 }

@@ -1,7 +1,6 @@
 package airmusic.airmusic.model.repositories;
 
-import airmusic.airmusic.model.Song;
-import airmusic.airmusic.model.User;
+import airmusic.airmusic.model.POJO.Song;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

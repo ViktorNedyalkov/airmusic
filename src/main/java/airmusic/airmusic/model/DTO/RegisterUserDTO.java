@@ -1,7 +1,7 @@
 package airmusic.airmusic.model.DTO;
 
 
-import airmusic.airmusic.model.User;
+import airmusic.airmusic.model.POJO.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

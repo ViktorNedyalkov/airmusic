@@ -1,13 +1,14 @@
-package airmusic.airmusic.model;
+package airmusic.airmusic.model.POJO;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.springframework.stereotype.Component;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @ToString
 @Getter
@@ -26,7 +27,8 @@ public class User {
     private String gender;
     private String birthDate;
 
-//    @JsonIgnore
+
+
 //    @ManyToMany
 //    @JoinTable(
 //            name = "users_follow_users",
@@ -42,7 +44,7 @@ public class User {
 //    private List<User> following;
 
     public User() {
-        //followers = new ArrayList<>();
+       // followers = new ArrayList<>();
         //following = new ArrayList<>();
     }
 
