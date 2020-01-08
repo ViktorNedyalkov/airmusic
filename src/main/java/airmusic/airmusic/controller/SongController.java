@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 public class SongController {
@@ -29,7 +30,7 @@ public class SongController {
     @GetMapping("/songs/{id}")
     public Song getSongById(@PathVariable("id") long id){
         if(repo.findById(id) != null){
-            return repo.findById(id);
+            return repo.findById(id).get();
         }else{
             throw new SongNotFoundException();
         }
@@ -54,10 +55,11 @@ public class SongController {
     public Song editSongDescription(@PathVariable("song_id") long song_id, @RequestBody Map<String, String> bodyData){
         //fixme
         //validate if user is logged in
-            //update description
+            //update descriptio
+        Optional<Song> obj = repo.findById(song_id);
 
-            if(repo.findById(song_id) != null){
-                Song song = repo.findById(song_id);
+            if(obj.isPresent()){
+                Song song = obj.get();
                 String newDescription = bodyData.get("description");
                 song.setDescription(newDescription);
                 repo.save(song);

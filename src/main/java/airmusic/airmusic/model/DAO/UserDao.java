@@ -106,7 +106,7 @@ public class UserDao {
             ps.setLong(1, user.getId());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                myFavouriteSongs.add(songRepository.findById(rs.getLong(1)));
+                myFavouriteSongs.add(songRepository.findById(rs.getLong(1)).get());
             }
 
         } catch (SQLException e) {

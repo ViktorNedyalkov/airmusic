@@ -1,8 +1,11 @@
 package airmusic.airmusic.controller;
 
 import airmusic.airmusic.exceptions.*;
+import airmusic.airmusic.model.DAO.PlaylistsDao;
 import airmusic.airmusic.model.DAO.UserDao;
+import airmusic.airmusic.model.DTO.AddTrackToLIstDTO;
 import airmusic.airmusic.model.DTO.LoginUserDTO;
+import airmusic.airmusic.model.DTO.PlaylistCreateDTO;
 import airmusic.airmusic.model.DTO.RegisterUserDTO;
 import airmusic.airmusic.model.POJO.Playlist;
 import airmusic.airmusic.model.POJO.Song;
@@ -23,7 +26,7 @@ import java.io.IOException;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 
 @RestController
@@ -141,15 +144,55 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     @PostMapping("/users/songs/like/{id}")
-    public Song likeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SongAlreadyLikedException {
+    public Song likeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SongAlreadyLikedException, BadRequestException {
         User user = (User) session.getAttribute("logged");
         if (user == null) {
             throw new NotLoggedUserException();
         }
-        Song song = songRepository.findById(id);
-        dao.likeSong(user, song);
-        return song;
+        Optional<Song> song = songRepository.findById(id);
+        if (!song.isPresent()){
+            throw  new BadRequestException("Not such song found");
+        }
+        dao.likeSong(user, song.get());
+        return song.get();
     }
+//
+//    @PostMapping("/users/playlists/create")
+//    public Playlist createPlaylist(HttpSession session,@RequestBody PlaylistCreateDTO pl) throws NotLoggedUserException {
+//        User user = validateUser(session);
+//        Playlist playlist = new Playlist();
+//        playlist.setCreator(user);
+//        playlist.setTitle(pl.getTitle());
+//        playlist.setName(pl.getName());
+//        playlistRepository.save(playlist);
+//        return playlist;
+//    }
+    
+//  TODO move to PlaylistController and Return the playlist
+
+//    @PostMapping("/users/playlists/track/add")
+//    public Playlist addTrackToList(HttpSession session, @RequestBody AddTrackToLIstDTO dto) throws NotLoggedUserException, BadRequestException, SQLException {
+//        User user = validateUser(session);
+//        //check if exists, such a playlist
+//        Optional<Playlist> playlist = playlistRepository.findById(dto.getPlaylist_id());
+//        Optional<Song> song = songRepository.findById(dto.getSong_id());
+//
+//        if (!playlist.isPresent()){
+//            throw new BadRequestException("Not such a playlist found");
+//        }
+//        if (!song.isPresent()){
+//            throw new BadRequestException("Not such a song  found");
+//        }
+//        //check if it contains this track
+//        if (!PlaylistsDao.containsSong(dto.getPlaylist_id(),dto.getSong_id())){
+//            throw new BadRequestException("Song already added");
+//        }
+//
+//        //add track_id and playlist_id to playlists_have_tracks
+//        //"INSERT INTO playlists_have_tracks VALUES(?,?)
+//
+//        return   PlaylistsDao.addSongToPlaylist(playlist.get(),song.get());
+//    }
 
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
@@ -164,14 +207,17 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     @DeleteMapping("/users/songs/dislike/{id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException, NotLikedSongException {
+    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException, NotLikedSongException, BadRequestException {
         User user = (User) session.getAttribute("logged");
         if (user == null) {
             throw new NotLoggedUserException();
         }
-        Song song = songRepository.findById(id);
-        dao.dislikeSong(user, song);
-        return song;
+        Optional<Song> song = songRepository.findById(id);
+        if (song.isPresent()){
+            throw new BadRequestException("Not such song");
+        }
+        dao.dislikeSong(user, song.get());
+        return song.get();
     }
 
     //GET MAPPINGS
@@ -204,7 +250,7 @@ Minimum eight in length .{8,} (with the anchors)
         return dao.myFavouriteSongs(user);
     }
 
-    @GetMapping("/users/myLists")
+    @GetMapping("/users/playlists/myLists")
     public List<Playlist> myLists(HttpSession session) throws NotLoggedUserException {
         User user = validateUser(session);
         System.out.println(user.getId());
@@ -213,7 +259,7 @@ Minimum eight in length .{8,} (with the anchors)
 
 
     //not mappings
-    private User validateUser(HttpSession session) throws NotLoggedUserException {
+    public static User validateUser(HttpSession session) throws NotLoggedUserException {
         User user = (User) session.getAttribute("logged");
         if (user == null) {
             throw new NotLoggedUserException();
@@ -222,6 +268,7 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     //Exception handler
+    //TODO optimization for BAD_REQUEST
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already followed")
     @ExceptionHandler({FollowUserException.class})
     public void handleException() {
@@ -253,10 +300,12 @@ Minimum eight in length .{8,} (with the anchors)
     public void handleSongAlreadyLikedException() {
     }
 
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "song is not liked")
-    @ExceptionHandler({NotLikedSongException.class})
-    public void handleNotLikedSongException() {
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST )
+    @ExceptionHandler({BadRequestException.class})
+    public void handleNotLikedSongException(BadRequestException e) {
+        e.getMessage();
     }
+
     //TESTING ZONE
 
 
