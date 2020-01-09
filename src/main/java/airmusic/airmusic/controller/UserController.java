@@ -156,43 +156,6 @@ Minimum eight in length .{8,} (with the anchors)
         dao.likeSong(user, song);
         return song;
     }
-//
-//    @PostMapping("/users/playlists/create")
-//    public Playlist createPlaylist(HttpSession session,@RequestBody PlaylistCreateDTO pl) throws NotLoggedUserException {
-//        User user = validateUser(session);
-//        Playlist playlist = new Playlist();
-//        playlist.setCreator(user);
-//        playlist.setTitle(pl.getTitle());
-//        playlist.setName(pl.getName());
-//        playlistRepository.save(playlist);
-//        return playlist;
-//    }
-
-//  TODO move to PlaylistController and Return the playlist
-
-//    @PostMapping("/users/playlists/track/add")
-//    public Playlist addTrackToList(HttpSession session, @RequestBody AddTrackToLIstDTO dto) throws NotLoggedUserException, BadRequestException, SQLException {
-//        User user = validateUser(session);
-//        //check if exists, such a playlist
-//        Optional<Playlist> playlist = playlistRepository.findById(dto.getPlaylist_id());
-//        Optional<Song> song = songRepository.findById(dto.getSong_id());
-//
-//        if (!playlist.isPresent()){
-//            throw new BadRequestException("Not such a playlist found");
-//        }
-//        if (!song.isPresent()){
-//            throw new BadRequestException("Not such a song  found");
-//        }
-//        //check if it contains this track
-//        if (!PlaylistsDao.containsSong(dto.getPlaylist_id(),dto.getSong_id())){
-//            throw new BadRequestException("Song already added");
-//        }
-//
-//        //add track_id and playlist_id to playlists_have_tracks
-//        //"INSERT INTO playlists_have_tracks VALUES(?,?)
-//
-//        return   PlaylistsDao.addSongToPlaylist(playlist.get(),song.get());
-//    }
 
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
@@ -262,19 +225,6 @@ Minimum eight in length .{8,} (with the anchors)
     public List<Song> getAllSongByUser(@PathVariable("user_id") long user_id){
         return songRepository.findAllByUploaderId(user_id);
     }
-
-    //not mappings
-//    public static User validateUser(HttpSession session) throws NotLoggedUserException {
-//        User user = (User) session.getAttribute("logged");
-//        if (user == null) {
-//            throw new NotLoggedUserException();
-//        }
-//        return user;
-//    }
-
-    //Exception handler
-
-    //TESTING ZONE
 
 
 

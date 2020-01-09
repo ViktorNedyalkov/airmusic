@@ -19,7 +19,7 @@ public class UserDao {
     @Autowired
     private SongRepository songRepository;
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    JdbcTemplate jdbcTemplate;
     private static final String FOLLOW_USERS_SQL = "INSERT INTO users_follow_users VALUES(?,?);";
     private static final String LIKE_SONG_SQL = "INSERT INTO users_likes_tracks VALUES(?,?);";
     private static final String USER_BY_EMAIL = "SELECT email FROM users WHERE email = ?";
@@ -55,20 +55,14 @@ public class UserDao {
     }
     public  List<User> getFollowers(User user) throws NoAccessException {
         String sql = "SELECT follower_id FROM users_follow_users WHERE followed_id =?";
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(sql)) {
-            ps.setLong(1,user.getId());
-            ResultSet rs = ps.executeQuery();
-            List<User> followers = new ArrayList<>();
-            while (rs.next()){
-                followers.add(userRepository.findById(rs.getLong(1)));
-            }
-            return followers;
-        } catch (SQLException e) {
-            throw new NoAccessException();
-        }
+        return getFollowUsers(user, sql);
     }
     public  List<User> getFollowing(User user) throws NoAccessException {
         String sql = "SELECT followed_id FROM users_follow_users WHERE follower_id =?";
+        return getFollowUsers(user, sql);
+    }
+
+    private List<User> getFollowUsers(User user, String sql) throws NoAccessException {
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(sql)) {
             ps.setLong(1,user.getId());
             ResultSet rs = ps.executeQuery();
@@ -81,6 +75,7 @@ public class UserDao {
             throw new NoAccessException();
         }
     }
+
     public void likeSong(User user, Song song) throws SongAlreadyLikedException {
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(LIKE_SONG_SQL)) {
             ps.setLong(1,user.getId());

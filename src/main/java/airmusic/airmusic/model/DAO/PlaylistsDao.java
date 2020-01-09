@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,16 +35,13 @@ public class PlaylistsDao {
 
     public Playlist addSongToPlaylist(Playlist playlist, Song song) throws SQLException {
         try(PreparedStatement ps = jdbcTemplate.getDataSource().getConnection().prepareStatement(ADD_SONG_TO_PLAYLIST_SQL)) {
-            jdbcTemplate.getDataSource().getConnection().setAutoCommit(false);
             ps.setLong(1, playlist.getId());
             ps.setLong(2, song.getId());
             ps.execute();
-            jdbcTemplate.getDataSource().getConnection().commit();
             return playlist;
 
         }
         finally {
-            jdbcTemplate.getDataSource().getConnection().setAutoCommit(true);
         }
     }
 
