@@ -30,7 +30,7 @@ import java.util.Optional;
 
 
 @RestController
-public class UserController {
+public class UserController extends AbstractController{
     private static final String PASSWORD_REGEX = "^(?=.*[0-9])(?=.*?[#?!@$%^&*-])(?=.*[a-zA-Z]).{8,}$";
     ;
     /*
@@ -149,12 +149,12 @@ Minimum eight in length .{8,} (with the anchors)
         if (user == null) {
             throw new NotLoggedUserException();
         }
-        Optional<Song> song = songRepository.findById(id);
-        if (!song.isPresent()){
+        Song song = songRepository.findById(id);
+        if (song==null){
             throw  new BadRequestException("Not such song found");
         }
-        dao.likeSong(user, song.get());
-        return song.get();
+        dao.likeSong(user, song);
+        return song;
     }
 //
 //    @PostMapping("/users/playlists/create")
@@ -207,17 +207,18 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     @DeleteMapping("/users/songs/dislike/{id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException, NotLikedSongException, BadRequestException {
+    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SQLException, NotLikedSongException, BadRequestException {
         User user = (User) session.getAttribute("logged");
         if (user == null) {
             throw new NotLoggedUserException();
         }
-        Optional<Song> song = songRepository.findById(id);
-        if (song.isPresent()){
-            throw new BadRequestException("Not such song");
+        Song song = songRepository.findById(id);
+        if (song==null){
+            throw  new BadRequestException("Not such song found");
         }
-        dao.dislikeSong(user, song.get());
-        return song.get();
+        dao.dislikeSong(user,song);
+        return song;
+
     }
 
     //GET MAPPINGS
@@ -257,54 +258,21 @@ Minimum eight in length .{8,} (with the anchors)
         return playlistRepository.findAllByCreator_Id(user.getId());
     }
 
+    @GetMapping("/{user_id}/songs")
+    public List<Song> getAllSongByUser(@PathVariable("user_id") long user_id){
+        return songRepository.findAllByUploaderId(user_id);
+    }
 
     //not mappings
-    public static User validateUser(HttpSession session) throws NotLoggedUserException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
-        }
-        return user;
-    }
+//    public static User validateUser(HttpSession session) throws NotLoggedUserException {
+//        User user = (User) session.getAttribute("logged");
+//        if (user == null) {
+//            throw new NotLoggedUserException();
+//        }
+//        return user;
+//    }
 
     //Exception handler
-    //TODO optimization for BAD_REQUEST
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already followed")
-    @ExceptionHandler({FollowUserException.class})
-    public void handleException() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user is not followed")
-    @ExceptionHandler({UnFollowUserException.class})
-    public void handleUnFollowUserException() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already exist with this email")
-    @ExceptionHandler({UserAlreadyExistsException.class})
-    public void userAlreadyExistHandler() {
-    }
-
-    @ResponseStatus(value = HttpStatus.UNAUTHORIZED, reason = "please login")
-    @ExceptionHandler({NotLoggedUserException.class})
-    public void loggedExceptionHandler() {
-
-    }
-
-    @ResponseStatus(value = HttpStatus.UNAUTHORIZED, reason = "access denied")
-    @ExceptionHandler({NoAccessException.class})
-    public void accessHandler() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "song already liked")
-    @ExceptionHandler({SongAlreadyLikedException.class})
-    public void handleSongAlreadyLikedException() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST )
-    @ExceptionHandler({BadRequestException.class})
-    public void handleNotLikedSongException(BadRequestException e) {
-        e.getMessage();
-    }
 
     //TESTING ZONE
 

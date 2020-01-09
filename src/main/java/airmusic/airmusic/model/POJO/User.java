@@ -20,9 +20,11 @@ public class User {
     @Id
     private long id;
     private String email;
+    @JsonIgnore
     private String password;
     private String firstName;
     private String lastName;
+    //TODO map
     @Column(name = "gender_id")
     private String gender;
     private String birthDate;

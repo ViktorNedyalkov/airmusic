@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-public class SongController {
+public class SongController extends AbstractController{
 
 
     @Autowired
@@ -30,7 +30,7 @@ public class SongController {
     @GetMapping("/songs/{id}")
     public Song getSongById(@PathVariable("id") long id){
         if(repo.findById(id) != null){
-            return repo.findById(id).get();
+            return repo.findById(id);
         }else{
             throw new SongNotFoundException();
         }
@@ -56,10 +56,9 @@ public class SongController {
         //fixme
         //validate if user is logged in
             //update descriptio
-        Optional<Song> obj = repo.findById(song_id);
+        Song song = repo.findById(song_id);
 
-            if(obj.isPresent()){
-                Song song = obj.get();
+            if(song !=null){
                 String newDescription = bodyData.get("description");
                 song.setDescription(newDescription);
                 repo.save(song);

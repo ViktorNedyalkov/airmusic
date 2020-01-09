@@ -10,4 +10,5 @@ public interface PlaylistRepository extends JpaRepository<Playlist,Long> {
 
     List<Playlist> findAll();
     List<Playlist> findAllByCreator_Id(long id);
+    Playlist findById(long id);
 }

@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface SongRepository extends JpaRepository<Song, Long> {
     List<Song> findAllByUploaderId(long id);
-
+    Song findById(long id);
 }

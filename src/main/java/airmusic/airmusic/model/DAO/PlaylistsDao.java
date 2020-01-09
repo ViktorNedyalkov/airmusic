@@ -21,10 +21,11 @@ public class PlaylistsDao {
     @Autowired
     private SongRepository songRepository;
     @Autowired
-    private static JdbcTemplate jdbcTemplate;
+    private  JdbcTemplate jdbcTemplate;
+
     private static final String CONTAINS_SONG_SQL = "SELECT * FROM playlists_have_tracks WHERE playlist_id =? AND track_id =?;";
 
-    public static boolean containsSong(long playlist_id,long song_id) throws SQLException {
+    public boolean containsSong(long playlist_id,long song_id) throws SQLException {
         try(PreparedStatement ps =jdbcTemplate.getDataSource().getConnection().prepareStatement(CONTAINS_SONG_SQL)){
             ps.setLong(1,playlist_id);
             ps.setLong(2,song_id);
@@ -33,7 +34,7 @@ public class PlaylistsDao {
         }
     }
 
-    public static Playlist addSongToPlaylist(Playlist playlist, Song song) throws SQLException {
+    public Playlist addSongToPlaylist(Playlist playlist, Song song) throws SQLException {
         try(PreparedStatement ps = jdbcTemplate.getDataSource().getConnection().prepareStatement(ADD_SONG_TO_PLAYLIST_SQL)) {
             jdbcTemplate.getDataSource().getConnection().setAutoCommit(false);
             ps.setLong(1, playlist.getId());
