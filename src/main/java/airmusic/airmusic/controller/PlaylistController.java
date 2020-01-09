@@ -38,9 +38,6 @@ public class PlaylistController extends AbstractController{
         playlist.setTitle(dto.getTitle());
         playlist.setName(dto.getName());
         playlistRepository.save(playlist);
-
-        //TODO return created
-        //Not working correctly
         return playlistRepository.findById(playlist.getId());
     }
     @PostMapping("/users/playlists/track/add")
