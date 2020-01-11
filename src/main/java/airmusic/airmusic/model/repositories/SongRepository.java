@@ -10,4 +10,6 @@ import java.util.List;
 public interface SongRepository extends JpaRepository<Song, Long> {
     List<Song> findAllByUploaderId(long id);
     Song findById(long id);
+    List<Song> findAllByTitleContaining(String title);
+
 }

@@ -1,30 +1,24 @@
 package airmusic.airmusic.controller;
 
 import airmusic.airmusic.exceptions.*;
-import airmusic.airmusic.model.DAO.PlaylistsDao;
 import airmusic.airmusic.model.DAO.UserDao;
-import airmusic.airmusic.model.DTO.AddTrackToLIstDTO;
-import airmusic.airmusic.model.DTO.LoginUserDTO;
-import airmusic.airmusic.model.DTO.PlaylistCreateDTO;
-import airmusic.airmusic.model.DTO.RegisterUserDTO;
-import airmusic.airmusic.model.POJO.Playlist;
-import airmusic.airmusic.model.POJO.Song;
+import airmusic.airmusic.model.DTO.*;
 import airmusic.airmusic.model.POJO.User;
-import airmusic.airmusic.model.repositories.PlaylistRepository;
-import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
-import com.google.gson.JsonObject;
 
 
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,38 +34,26 @@ At least one digit, (?=.*?[0-9])
 At least one special character, (?=.*?[#?!@$%^&*-])
 Minimum eight in length .{8,} (with the anchors)
      */
+
     private static final String EMAIL_REGEX = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
+    private static final String DATE_REGEX = "([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))";
+    private static final String LOGGED = "logged";
+    private static final LocalDate MIN_DATE_REQUIRED_FOR_REGISTRATION = LocalDate.of(1900,01,01);
+
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;//TODO check this. Not sure we need it at all
-    @Autowired
-    private UserDao dao;
+    private UserDao userDao;
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private SongRepository songRepository;
-    @Autowired
-    private PlaylistRepository playlistRepository;
-
     @PostMapping("/register")
-    public String registerUser(@RequestBody RegisterUserDTO dto) throws IOException, SQLException {
-        JsonObject resp = new JsonObject();
-        System.out.println(dto.toString());
-        if (!dto.getConfirmPassword().equals(dto.getPassword())) {
-            resp.addProperty("Status", "400");
-            resp.addProperty("msg", "Passwords do not match");
-            return resp.toString();
+    public User registerUser(@RequestBody RegisterUserDTO dto) throws IOException, SQLException, BadRequestException {
+        isPasswordCorrect(dto.getPassword(),dto.getConfirmPassword());
+        if (!dto.getEmail().trim().matches(EMAIL_REGEX)) {
+           throw new BadRequestException("Not a valid e-mail");
         }
-        if (!dto.getPassword().matches(PASSWORD_REGEX)) {
-            resp.addProperty("Status", "400");
-            resp.addProperty("msg", "Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
-            return resp.toString();
-        }
-        if (!dto.getEmail().matches(EMAIL_REGEX)) {
-            resp.addProperty("Status", "400");
-            resp.addProperty("msg", "Not a valid e-mail");
-            return resp.toString();
+        if (userRepository.existsByEmail(dto.getEmail())){
+            throw new BadRequestException("User already exists with this e-mail");
         }
         if (dto.getEmail().isEmpty()
                 || dto.getPassword().isEmpty()
@@ -80,153 +62,127 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getLastName().isEmpty()
                 || dto.getGender().isEmpty()
                 || dto.getBirthDate().isEmpty()) {
-            resp.addProperty("Status", "400");
-            resp.addProperty("msg", "Fill all fields");
-            return resp.toString();
+            throw new BadRequestException("All fills are required");
         }
-        if (dao.doesExist(dto.getEmail())) {
-            resp.addProperty("Status", "400");
-            resp.addProperty("msg", "User already exist with this email");
-            return resp.toString();
-        }
+        validateDate(dto.getBirthDate());
         User user = dto.toUser();
-        //users gender to be converted to gender_id
-
+        //users gender to be converted to gender_id//TODO da otpadne ili da napravim DTO za response? ili neshto drugo da predlojish
         userRepository.save(user);
-        // dao.addUserToDB(dto.toUser());
-        resp.addProperty("Status", "200");
-        resp.addProperty("msg", "User is registered");
-        return resp.toString();
+        return user;
     }//// TODO: 6.1.2020 г. send mail
 
+    private boolean isPasswordCorrect(String password, String confirmPassword) throws BadRequestException {
+        if (!confirmPassword.equals(password)) {
+            throw new BadRequestException("Passwords must match");
+        }
+        if (!password.matches(PASSWORD_REGEX)) {
+            throw  new BadRequestException("Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
+        }
+        if (!password.equals(confirmPassword.trim())){
+            throw  new BadRequestException("Password can`t have blank characters");
+        }
+        return true;
+    }
+
+    private void validateDate(@RequestBody String date) throws BadRequestException, SQLException {
+        if (date.matches(DATE_REGEX)){
+            if (LocalDate.parse(date).isAfter(LocalDate.now())||
+                LocalDate.parse(date).isBefore(MIN_DATE_REQUIRED_FOR_REGISTRATION)){
+                 throw new BadRequestException("Invalid date");
+            }
+        }
+        else{
+            throw new BadRequestException("Invalid date");
+        }
+    }
+
     @PostMapping("/login")//ok
-    public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session) throws IOException {
-        JsonObject resp = new JsonObject();
+    public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session) throws BadRequestException {
         String email = dto.getEmail();
         String pass = dto.getPassword();
         User user = userRepository.findByEmail(email);
-        if (user == null || !user.getPassword().equals(pass)) {
-            resp.addProperty("status", "401");
-            resp.addProperty("msg", "wrong email or password");
-            return resp.toString();
+        if (user == null||!BCrypt.checkpw(pass,user.getPassword())) {
+            throw new BadRequestException("Wrong e-mail or password");
         }
-        session.setAttribute("logged", user);
+        session.setAttribute(LOGGED, user);
 
         return "Successfully login";
     }
 
-    @PostMapping("/users/update")
-    public User updateUser(HttpSession session, @RequestBody RegisterUserDTO updatedUser) throws NotLoggedUserException, SQLException, UserAlreadyExistsException {
+    @PutMapping("/users/pi")
+    public User updateUser(HttpSession session, @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
         User user = validateUser(session);
-        if (dao.doesExist(updatedUser.getEmail())) {
-            throw new UserAlreadyExistsException();
+        if (userDao.doesExist(updatedUser.getEmail())&&
+            !user.getEmail().equals(updatedUser.getEmail())) {
+            throw new BadRequestException("User already exists with this e-mail");
         }
         user.setEmail(updatedUser.getEmail());
-        user.setPassword(updatedUser.getPassword());
         user.setFirstName(updatedUser.getFirstName());
         user.setLastName(updatedUser.getLastName());
         user.setGender(updatedUser.getGender());
+        validateDate(updatedUser.getBirthDate());
         user.setBirthDate(updatedUser.getBirthDate());
         userRepository.save(user);
         return user;
     }
-
-    @PostMapping("/users/follow/{id}")
-    public User followUser(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, FollowUserException {
-
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
+    @PutMapping("users/pw")
+    public User changePassword(HttpSession session, @RequestBody ChangePasswordUserDTO dto) throws BadRequestException {
+        User user = validateUser(session);
+        if (isPasswordCorrect(dto.getNewPassword(),dto.getConfirmNewPassword())&&
+            BCrypt.checkpw(dto.getOldPassword(),user.getPassword())){
+            user.setPassword(dto.getNewPassword());
+            return user;
         }
-        User followedUser = userRepository.findById(id);
-        dao.followUser(user, followedUser);
-        return user;
+        else {
+            throw new BadRequestException("Wrong Credentials");
+        }
     }
 
-    @PostMapping("/users/songs/like/{id}")
-    public Song likeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SongAlreadyLikedException, BadRequestException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
+    @PostMapping("/users/follow/{id}")
+    public User followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
+        User user = validateUser(session);
+        Optional<User> followedUser = userRepository.findById(id);
+        if (!followedUser.isPresent()){
+            throw new BadRequestException("No such user");
         }
-        Song song = songRepository.findById(id);
-        if (song==null){
-            throw  new BadRequestException("Not such song found");
-        }
-        dao.likeSong(user, song);
-        return song;
+        userDao.followUser(user, followedUser.get());
+        return user;
     }
 
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
-    public User unfollowUser(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, UnFollowUserException, SQLException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
+    public User unfollowUser(HttpSession session, @PathVariable("id") long id) throws SQLException, BadRequestException {
+        User user = validateUser(session);
+        Optional<User> targetUser = userRepository.findById(id);
+        if (!targetUser.isPresent()){
+            throw new BadRequestException("No such user");
         }
-        User targetUser = userRepository.findById(id);
-        dao.unFollowUser(user, targetUser);
+        userDao.unFollowUser(user, targetUser.get());
         return user;
     }
 
-    @DeleteMapping("/users/songs/dislike/{id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SQLException, NotLikedSongException, BadRequestException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
-        }
-        Song song = songRepository.findById(id);
-        if (song==null){
-            throw  new BadRequestException("Not such song found");
-        }
-        dao.dislikeSong(user,song);
-        return song;
 
-    }
 
     //GET MAPPINGS
-    @GetMapping("/getItAll")
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
-
+    @SneakyThrows
     @GetMapping("/users/followers")
-    public List<User> getFollowers(HttpSession session) throws NotLoggedUserException, NoAccessException {
+    public List<User> getFollowers(HttpSession session)  {
         User user = validateUser(session);
-        return dao.getFollowers(user);
+        return userDao.getFollowers(user);
     }
 
     @GetMapping("/users/following")
-    public List<User> getFollowing(HttpSession session) throws NotLoggedUserException, NoAccessException {
+    public List<User> getFollowing(HttpSession session) throws SQLException {
         User user = validateUser(session);
-        return dao.getFollowing(user);
+        return userDao.getFollowing(user);
     }
 
-    @GetMapping("/users/mySongs")
-    public List<Song> mySongs(HttpSession session) throws NotLoggedUserException {
-        User user = validateUser(session);
-        return songRepository.findAllByUploaderId(user.getId());
+    @GetMapping("users/find")
+    public List<User> findUser(@RequestBody SearchDTO dto){//finds users By firstName or LastName
+        List <User> searchResult = userRepository.findAllByFirstNameContaining(dto.getSearchingFor().trim());
+        List<User> lastNameResult = userRepository.findAllByLastNameContaining(dto.getSearchingFor().trim());
+        searchResult.removeAll(lastNameResult);
+        searchResult.addAll(lastNameResult);
+        return searchResult;
     }
-
-    @GetMapping("/users/myFavouriteSongs")
-    public List<Song> myFavouriteSongs(HttpSession session) throws NotLoggedUserException {
-        User user = validateUser(session);
-        return dao.myFavouriteSongs(user);
-    }
-
-    @GetMapping("/users/playlists/myLists")
-    public List<Playlist> myLists(HttpSession session) throws NotLoggedUserException {
-        User user = validateUser(session);
-        System.out.println(user.getId());
-        return playlistRepository.findAllByCreator_Id(user.getId());
-    }
-
-    @GetMapping("/{user_id}/songs")
-    public List<Song> getAllSongByUser(@PathVariable("user_id") long user_id){
-        return songRepository.findAllByUploaderId(user_id);
-    }
-
-
-
-
 }

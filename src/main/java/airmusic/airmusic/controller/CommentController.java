@@ -1,9 +1,6 @@
 package airmusic.airmusic.controller;
 
-import airmusic.airmusic.exceptions.CommentNotFoundException;
-import airmusic.airmusic.exceptions.IlligalValuePassedException;
-import airmusic.airmusic.exceptions.NotLoggedUserException;
-import airmusic.airmusic.exceptions.SongNotFoundException;
+import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DTO.CommentDTO;
 import airmusic.airmusic.model.POJO.Comment;
 import airmusic.airmusic.model.POJO.User;
@@ -33,7 +30,7 @@ public class CommentController extends AbstractController{
         User user = validateUser(session);
 
         if(songRepository.findById(song_id) == null){
-            throw new SongNotFoundException();
+            throw new NotFoundException("Song not found");
         }
         Comment comment = new Comment();
         comment.setText(commentDTO.getText());
@@ -54,7 +51,7 @@ public class CommentController extends AbstractController{
         User user = validateUser(session);
 
         if(songRepository.findById(songId) == null){
-            throw new SongNotFoundException();
+            throw new NotFoundException("Song not found");
         }
         if(user.getId() != commentRepository.findById(songId).getUser().getId()){
             //todo maybe change to another exception
@@ -63,7 +60,7 @@ public class CommentController extends AbstractController{
         Comment oldComment = commentRepository.findById(commentId);
 
         if(oldComment == null){
-            throw new CommentNotFoundException();
+            throw new NotFoundException("Comment not found");
         }
         if(commentDTO.getText() == null){
             throw new IlligalValuePassedException();
@@ -82,7 +79,7 @@ public class CommentController extends AbstractController{
         User user = validateUser(session);
 
         if(songRepository.findById(songId) == null){
-            throw new SongNotFoundException();
+            throw new NotFoundException("Song not found");
         }
 
         if(user.getId() != commentRepository.findById(songId).getUser().getId()){
@@ -91,7 +88,7 @@ public class CommentController extends AbstractController{
         }
         Comment commentToDelete = commentRepository.findById(commentId);
         if(commentToDelete == null){
-            throw new CommentNotFoundException();
+            throw new NotFoundException("Comment not found");
         }
         commentRepository.delete(commentToDelete);
 

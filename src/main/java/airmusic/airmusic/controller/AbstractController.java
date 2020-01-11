@@ -36,43 +36,15 @@ public abstract class AbstractController {
         return user;
     }
     //TODO optimization for BAD_REQUEST
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already followed")
-    @ExceptionHandler({FollowUserException.class})
-    public void handleException() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user is not followed")
-    @ExceptionHandler({UnFollowUserException.class})
-    public void handleUnFollowUserException() {
-    }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already exist with this email")
     @ExceptionHandler({UserAlreadyExistsException.class})
     public void userAlreadyExistHandler() {
     }
 
-    @ResponseStatus(value = HttpStatus.UNAUTHORIZED, reason = "access denied")
-    @ExceptionHandler({NoAccessException.class})
-    public void accessHandler() {
-    }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "song already liked")
-    @ExceptionHandler({SongAlreadyLikedException.class})
-    public void handleSongAlreadyLikedException() {
-    }
-
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler({BadRequestException.class})
-    public void handleBadRequestException(BadRequestException e){
-
+    public String handleBadRequestException(BadRequestException e){
+            return e.getMessage();
     }
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Song is not liked")
-    @ExceptionHandler({NotLikedSongException.class})
-    public void handleNotLikedSongException(NotLikedSongException e) {
-        e.getMessage();
-    }
-
-
-
 }

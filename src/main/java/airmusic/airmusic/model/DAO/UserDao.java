@@ -5,6 +5,7 @@ import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -14,18 +15,17 @@ import java.util.ArrayList;
 import java.util.List;
 @Component
 public class UserDao {
+    private static final int IF_ANY_ROWS_EFFECTED = 1;
     @Autowired
     private  UserRepository userRepository;
     @Autowired
     private SongRepository songRepository;
     @Autowired
     JdbcTemplate jdbcTemplate;
+
     private static final String FOLLOW_USERS_SQL = "INSERT INTO users_follow_users VALUES(?,?);";
-    private static final String LIKE_SONG_SQL = "INSERT INTO users_likes_tracks VALUES(?,?);";
     private static final String USER_BY_EMAIL = "SELECT email FROM users WHERE email = ?";
-    private static final int CHECK_IF_ANY_DELETED_ROWS = 1;
     private static final String UNFOLLOW_USER_SQL = "DELETE FROM users_follow_users WHERE followed_id = ? AND follower_id =?;";
-    private static final String DISLIKE_SONG_SQL = "DELETE FROM users_likes_tracks WHERE user_id = ? AND track_id =?;";
 
     public  boolean doesExist(String email) throws SQLException {
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(USER_BY_EMAIL)) {
@@ -34,81 +34,48 @@ public class UserDao {
             return rs.next();
         }
     }
-    public  void followUser(User follower,User folllowing) throws FollowUserException {
+    @SneakyThrows
+    public  void followUser(User follower, User following) {
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(FOLLOW_USERS_SQL)) {
-            ps.setLong(1,follower.getId());
-            ps.setLong(2,folllowing.getId());
-            ps.execute();
-        } catch (SQLException e) {
-            throw new FollowUserException();
-        }
-
-    }
-    public void unFollowUser(User user, User targetUser) throws SQLException, UnFollowUserException {
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(UNFOLLOW_USER_SQL)) {
-            ps.setLong(1,user.getId());
-            ps.setLong(2,targetUser.getId());
-            if (ps.executeUpdate()< CHECK_IF_ANY_DELETED_ROWS){
-                throw new UnFollowUserException();
+            ps.setLong(1, follower.getId());
+            ps.setLong(2, following.getId());
+            if (ps.execute()) {
+                throw new BadRequestException("User is already followed");
             }
         }
     }
-    public  List<User> getFollowers(User user) throws NoAccessException {
+    public void unFollowUser(User user, User targetUser) throws SQLException, BadRequestException {
+        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(UNFOLLOW_USER_SQL)) {
+            ps.setLong(1,targetUser.getId());
+            ps.setLong(2,user.getId());
+            if (ps.executeUpdate()< IF_ANY_ROWS_EFFECTED){
+                throw new BadRequestException("User is not followed");
+            }
+        }
+    }
+    public  List<User> getFollowers(User user) throws SQLException {
         String sql = "SELECT follower_id FROM users_follow_users WHERE followed_id =?";
         return getFollowUsers(user, sql);
     }
-    public  List<User> getFollowing(User user) throws NoAccessException {
+    public  List<User> getFollowing(User user) throws  SQLException {
         String sql = "SELECT followed_id FROM users_follow_users WHERE follower_id =?";
         return getFollowUsers(user, sql);
     }
 
-    private List<User> getFollowUsers(User user, String sql) throws NoAccessException {
+    private List<User> getFollowUsers(User user, String sql) throws SQLException {
         try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(sql)) {
             ps.setLong(1,user.getId());
             ResultSet rs = ps.executeQuery();
             List<User> followers = new ArrayList<>();
             while (rs.next()){
-                followers.add(userRepository.findById(rs.getLong(1)));
+                followers.add(userRepository.findById(rs.getLong(1)).get());
             }
             return followers;
-        } catch (SQLException e) {
-            throw new NoAccessException();
         }
     }
 
-    public void likeSong(User user, Song song) throws SongAlreadyLikedException {
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(LIKE_SONG_SQL)) {
-            ps.setLong(1,user.getId());
-            ps.setLong(2,song.getId());
-            ps.execute();
-        } catch (SQLException e) {
-            throw new SongAlreadyLikedException();
-        }
-    }
-    public void dislikeSong(User user, Song song) throws SQLException, NotLikedSongException {
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(DISLIKE_SONG_SQL)) {
-            ps.setLong(1,user.getId());
-            ps.setLong(2,song.getId());
-            if (ps.executeUpdate()< CHECK_IF_ANY_DELETED_ROWS){
-                throw new NotLikedSongException();
-            }
-        }
-    }
-    public List<Song> myFavouriteSongs(User user) {
-        List<Song> myFavouriteSongs = new ArrayList<>();
-        String sql = "SELECT track_id FROM users_likes_tracks WHERE user_id =?;";
-        try (PreparedStatement ps = jdbcTemplate.getDataSource().getConnection().prepareStatement(sql)) {
-            ps.setLong(1, user.getId());
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                myFavouriteSongs.add(songRepository.findById(rs.getLong(1)));
-            }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return myFavouriteSongs;
-    }
+
 
 
 }

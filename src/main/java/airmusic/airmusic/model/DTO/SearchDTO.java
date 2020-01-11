@@ -7,7 +7,6 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
-public class AddTrackToLIstDTO {
-    private long playlist_id;
-    private long song_id;
+public class SearchDTO {
+    private String searchingFor;
 }

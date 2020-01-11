@@ -3,6 +3,7 @@ package airmusic.airmusic.model.POJO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import javax.persistence.*;
 
@@ -16,6 +17,7 @@ import javax.persistence.*;
 @Table(name = "users")
 public class User {
     @Id
+    @GeneratedValue
     private long id;
     private String email;
     @JsonIgnore
@@ -38,4 +40,7 @@ public class User {
         this.birthDate = birthDate;
     }
 
+    public void setPassword(String password){
+        this.password = BCrypt.hashpw(password,BCrypt.gensalt());
+    }
 }
