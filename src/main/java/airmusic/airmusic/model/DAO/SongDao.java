@@ -29,16 +29,9 @@ public class SongDao {
     private static final String DISLIKE_SONG_SQL = "DELETE FROM users_likes_tracks WHERE user_id = ? AND track_id =?;";
     private static final int IF_ANY_ROWS_EFFECTED = 1;
     private static final String GET_PLAYLIST_TRACKS_SQL = "SELECT track_id FROM playlists_have_tracks WHERE playlist_id =?;";
+    //todo implement
+    private static final String GET_BY_NUMBER_OF_LIKES = "SELECT COUNT(*), t.*  FROM users_likes_tracks AS u JOIN tracks AS t ON(u.track_id = t.id) WHERE user_id = 1";
 
-
-    public List<Song> getAllSongs(){
-        //todo get all songs
-        return null;
-    }
-
-    public void addSong(Song song){
-        //todo add the song
-    }
 
     public List<Song> myFavouriteSongs(User user) throws SQLException {
         try (Connection connection =jdbcTemplate.getDataSource().getConnection();
@@ -52,6 +45,10 @@ public class SongDao {
             return myFavouriteSongs;
         }
 
+    }
+    //todo implement
+    public List<Song> getSongsByUploadDateAndNumberOfLikes(){
+        return null;
     }
     public void likeSong(User user, Song song) throws BadRequestException {
         try  (Connection connection = jdbcTemplate.getDataSource().getConnection();
