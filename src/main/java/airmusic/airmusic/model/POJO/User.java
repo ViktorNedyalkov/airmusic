@@ -28,6 +28,8 @@ public class User {
     @Column(name = "gender_id")
     private String gender;
     private String birthDate;
+    private String avatar;
+    private boolean activated;
 
 
 

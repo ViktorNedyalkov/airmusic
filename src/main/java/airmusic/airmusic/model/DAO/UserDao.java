@@ -18,8 +18,7 @@ public class UserDao {
     private static final int IF_ANY_ROWS_EFFECTED = 1;
     @Autowired
     private  UserRepository userRepository;
-    @Autowired
-    private SongRepository songRepository;
+
     @Autowired
     JdbcTemplate jdbcTemplate;
 
