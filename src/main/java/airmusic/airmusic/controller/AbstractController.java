@@ -1,6 +1,7 @@
 package airmusic.airmusic.controller;
 
 import airmusic.airmusic.exceptions.*;
+import airmusic.airmusic.model.DTO.ErrorDTO;
 import airmusic.airmusic.model.POJO.User;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MultipartException;
 
 import javax.servlet.http.HttpSession;
+import java.time.LocalDateTime;
 
 public abstract class AbstractController {
 
@@ -22,7 +24,7 @@ public abstract class AbstractController {
 
     }
 
-    @ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "Size of file is too large")
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Size of file is too large")
     @ExceptionHandler(MultipartException.class)
     public void uploadSizeExceeded() {
 
@@ -36,15 +38,18 @@ public abstract class AbstractController {
         return user;
     }
     //TODO optimization for BAD_REQUEST
-
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "user already exist with this email")
-    @ExceptionHandler({UserAlreadyExistsException.class})
-    public void userAlreadyExistHandler() {
-    }
-
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler({BadRequestException.class})
-    public String handleBadRequestException(BadRequestException e){
-            return e.getMessage();
+    public ErrorDTO handleBadRequest(Exception e){
+        ErrorDTO errorDTO = new ErrorDTO(
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                e.getClass().getName());
+        return errorDTO;
     }
+
+
+
+
 }
