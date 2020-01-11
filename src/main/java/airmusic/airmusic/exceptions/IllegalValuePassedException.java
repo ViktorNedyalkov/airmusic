@@ -4,9 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 
-public class SongNotFoundException extends RuntimeException {
-    public SongNotFoundException(){}
-    public SongNotFoundException(String msg){
+public class IllegalValuePassedException extends RuntimeException{
+    public IllegalValuePassedException(){}
+
+    public IllegalValuePassedException(String msg){
         super(msg);
     }
 }

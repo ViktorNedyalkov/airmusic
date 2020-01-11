@@ -7,8 +7,8 @@ import  java.sql.*;
 
 public class DBmanager {
     private static final String DATA_BASE_NAME = "mydb";
-    private static final String PASSWORD = "iceman";
-    private static final String USERNAME = "iceman";
+    private static final String PASSWORD = "localhost112123";
+    private static final String USERNAME = "finalproject";
     private static final String PORT = "3306";
     private static final String IP_ADDRESS = "127.0.0.1";
 

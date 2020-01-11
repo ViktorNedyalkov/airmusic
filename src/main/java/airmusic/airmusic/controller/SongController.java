@@ -1,16 +1,13 @@
 package airmusic.airmusic.controller;
 
-import airmusic.airmusic.exceptions.ForbiddenSongActionException;
-import airmusic.airmusic.exceptions.NotLoggedUserException;
-import airmusic.airmusic.exceptions.SongNotFoundException;
+import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
-import airmusic.airmusic.model.DTO.SongUploadDTO;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
+import airmusic.airmusic.model.repositories.UserRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +17,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +32,8 @@ public class SongController extends  AbstractController{
     private SongDao dao;
     @Autowired
     private SongRepository songRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     //get mappings
 
@@ -47,20 +48,37 @@ public class SongController extends  AbstractController{
         if(songRepository.findById(id) != null){
             return songRepository.findById(id);
         }else{
-            throw new SongNotFoundException();
+            throw new SongNotFoundException("Song does not exist");
         }
 
 
     }
 
+    @GetMapping("user/{user_id}/songs")
+    public List<Song> songsByUser(@PathVariable(value = "user_id") long userId){
+        if(userRepository.findById(userId) == null){
+            
+            throw new UserNotFoundException();
+        }
+        return songRepository.findAllByUploaderId(userId);
+    }
+
     //post mappings
     @SneakyThrows
-    @PostMapping("/songs/upload")
-    public Song addSong(@RequestParam String description, @RequestParam String title, @RequestParam String genre_id, @RequestParam("song")MultipartFile file, HttpSession session){
+    @PostMapping("/songs")
+    public Song addSong(@RequestParam String description, @RequestParam String title, @RequestParam String genre_id, @RequestParam(value = "song")MultipartFile file, HttpSession session){
         //is user logged in
         User uploader = validateUser(session);
+        if(file == null){
+            throw new IllegalValuePassedException("Please upload a file");
+        }
+        if(!file.getContentType().equalsIgnoreCase("audio/mpeg")){
+            throw new IllegalValuePassedException("Please upload an audio file");
+        }
         byte[] fileBytes = file.getBytes();
-        String songUrl = UPLOAD_PATH + file.getOriginalFilename();
+
+
+        String songUrl = UPLOAD_PATH + file.getOriginalFilename() + new Time(System.currentTimeMillis());
         Path path = Paths.get(songUrl);
         Files.write(path, fileBytes);
 
@@ -68,7 +86,7 @@ public class SongController extends  AbstractController{
         song.setTitle(title);
         song.setGenre_id(Long.valueOf(genre_id));
         song.setDescription(description);
-        song.setTrack_url(songUrl + file.getOriginalFilename());
+        song.setTrack_url(songUrl);
         song.setUploader(uploader);
         song.setUpload_date(new Date());
 
@@ -78,7 +96,7 @@ public class SongController extends  AbstractController{
 
     //put mappings
     //todo: taka li se pravi???!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    @PutMapping("/user/song/{song_id}/edit")
+    @PutMapping("song/{song_id}")
     public Song editSongDescription(@PathVariable("song_id") long song_id, @RequestBody Map<String, String> bodyData, HttpSession session) throws NotLoggedUserException {
         //fixme
         //validate if user is logged in
@@ -107,8 +125,8 @@ public class SongController extends  AbstractController{
 
 
     //delete mappings
-    @DeleteMapping("/users/{user_id}/{song_id}/delete")
-    public Song deleteSong(@PathVariable("user_id") long user_id, @PathVariable("song_id") long song_id, HttpSession session) throws NotLoggedUserException{
+    @DeleteMapping("/songs/{/{song_id}")
+    public Song deleteSong(@PathVariable("song_id") long song_id, HttpSession session) throws NotLoggedUserException{
         //is user logged in
         User user = validateUser(session);
         if(user == null){
@@ -126,6 +144,11 @@ public class SongController extends  AbstractController{
             throw new NotLoggedUserException();
         }
         //delete song
+        //from file system
+        File file = new File(song.getTrack_url());
+        System.out.println(file.exists());
+
+        //from database
         songRepository.delete(song);
         //don't know if i should return anything
         return song;
