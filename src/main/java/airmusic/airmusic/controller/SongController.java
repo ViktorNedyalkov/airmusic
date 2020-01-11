@@ -154,12 +154,9 @@ public class SongController extends  AbstractController{
         return song;
     }
 
-    @PostMapping("/songs/like/{id}")
-    public Song likeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, BadRequestException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
-        }
+    @PostMapping("/songs/like/{song_id}")
+    public Song likeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException, BadRequestException {
+        User user = validateUser(session);
         Song song = songRepository.findById(id);
         if (song==null){
             throw  new BadRequestException("Not such song found");
@@ -167,12 +164,9 @@ public class SongController extends  AbstractController{
         songDao.likeSong(user, song);
         return song;
     }
-    @DeleteMapping("/songs/dislike/{id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("id") long id) throws NotLoggedUserException, SQLException, BadRequestException {
-        User user = (User) session.getAttribute("logged");
-        if (user == null) {
-            throw new NotLoggedUserException();
-        }
+    @DeleteMapping("/songs/dislike/{song_id}")
+    public Song dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException, SQLException, BadRequestException {
+        User user = validateUser(session);
         Song song = songRepository.findById(id);
         if (song==null){
             throw  new BadRequestException("Not such song found");

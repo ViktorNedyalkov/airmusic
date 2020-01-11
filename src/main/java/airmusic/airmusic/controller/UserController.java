@@ -203,7 +203,7 @@ Minimum eight in length .{8,} (with the anchors)
         return searchResult;
     }
 
-  
+
 
     private boolean isPasswordCorrect(String password, String confirmPassword) throws BadRequestException {
         if (!confirmPassword.equals(password)) {

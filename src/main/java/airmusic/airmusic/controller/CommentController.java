@@ -2,6 +2,7 @@ package airmusic.airmusic.controller;
 
 
 import airmusic.airmusic.exceptions.*;
+import airmusic.airmusic.model.DAO.CommentDao;
 import airmusic.airmusic.model.DTO.CommentDTO;
 import airmusic.airmusic.model.POJO.Comment;
 import airmusic.airmusic.model.POJO.User;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.sql.SQLException;
 import java.util.Date;
 
 @RestController
@@ -21,6 +23,8 @@ public class CommentController extends AbstractController {
     private SongRepository songRepository;
     @Autowired
     private CommentRepository commentRepository;
+    @Autowired
+    private CommentDao commentDao;
 
     @SneakyThrows
     @PostMapping("comments/{song_id}")
@@ -90,7 +94,28 @@ public class CommentController extends AbstractController {
         Comment comment = getCommentIfItExists(commentId);
         commentRepository.delete(comment);
     }
-
+    @SneakyThrows
+    @PostMapping("/comments/like/{comment_id}")
+    public Comment likeComment(@PathVariable("comment_id") long id,
+                               HttpSession session){
+        User user = validateUser(session);
+        Comment comment = commentRepository.findById(id);
+        if(comment ==null){
+            throw new BadRequestException("Comment not found!");
+        }
+        commentDao.likeComment(user,comment);
+        return comment;
+    }
+    @DeleteMapping("/songs/dislike/{song_id}")
+    public Comment dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws BadRequestException, SQLException {
+        User user = validateUser(session);
+        Comment comment = commentRepository.findById(id);
+        if (comment==null){
+            throw  new BadRequestException("Comment not found!");
+        }
+        commentDao.dislike(user,comment);
+        return comment;
+    }
     private void checkIfSongExists(long songId) throws NotFoundException {
         if (songRepository.findById(songId) == null) {
             throw new NotFoundException("Song not found");
