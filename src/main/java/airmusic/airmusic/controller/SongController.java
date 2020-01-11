@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class SongController extends  AbstractController{
             
             throw new NotFoundException("User not found");
         }
-        return songRepository.findAllByUploaderId(userId);
+        return songRepository.findAllByUploader_Id(userId);
     }
 
     //post mappings
@@ -189,11 +188,15 @@ public class SongController extends  AbstractController{
     @GetMapping("/songs/mySongs")
     public List<Song> mySongs(HttpSession session) throws NotLoggedUserException {
         User user = validateUser(session);
-        return songRepository.findAllByUploaderId(user.getId());
+        return songRepository.findAllByUploader_Id(user.getId());
     }
 
     @GetMapping("/songs/find/{song_title}")
     public List<Song> findSong(@PathVariable ("song_title") String title){
         return songRepository.findAllByTitleContaining(title);
+    }
+    @GetMapping("/songs/{uploader_id}/")
+    public List<Song> getUploaderSong(@PathVariable("uploader_id") long id){
+        return songRepository.findAllByUploader_Id(id);
     }
 }

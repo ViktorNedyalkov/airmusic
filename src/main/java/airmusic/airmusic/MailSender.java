@@ -58,7 +58,4 @@ public  class MailSender extends Thread{
             e.printStackTrace();
         }
     }
-
-
-
 }

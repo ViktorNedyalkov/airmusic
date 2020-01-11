@@ -48,8 +48,4 @@ public abstract class AbstractController {
                 e.getClass().getName());
         return errorDTO;
     }
-
-
-
-
 }

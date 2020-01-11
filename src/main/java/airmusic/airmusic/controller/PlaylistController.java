@@ -74,7 +74,10 @@ public class PlaylistController extends AbstractController{
         }
         return songDao.playlistSongs(id);
     }
-
+    @GetMapping("/playlists/{creator_id}/")
+    public List<Playlist> getPlaylistFromCreator(@PathVariable("creator_id") long id){
+        return playlistRepository.findAllByCreator_Id(id);
+    }
     //delete
     @SneakyThrows
     @DeleteMapping("playlists/{playlist_id}")

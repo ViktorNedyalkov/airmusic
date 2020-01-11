@@ -3,6 +3,7 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.*;
+import airmusic.airmusic.model.POJO.Playlist;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.UserRepository;
 
@@ -88,29 +89,6 @@ Minimum eight in length .{8,} (with the anchors)
        user.get().setActivated(true);
        return userRepository.save( user.get());
     }
-    private boolean isPasswordCorrect(String password, String confirmPassword) throws BadRequestException {
-        if (!confirmPassword.equals(password)) {
-            throw new BadRequestException("Passwords must match");
-        }
-        if (!password.matches(PASSWORD_REGEX)) {
-            throw  new BadRequestException("Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
-        }
-        if (!password.equals(confirmPassword.trim())){
-            throw  new BadRequestException("Password can`t have blank characters");
-        }
-        return true;
-    }
-    private void validateDate(@RequestBody String date) throws BadRequestException, SQLException {
-        if (date.matches(DATE_REGEX)){
-            if (LocalDate.parse(date).isAfter(LocalDate.now())||
-                LocalDate.parse(date).isBefore(MIN_DATE_REQUIRED_FOR_REGISTRATION)){
-                 throw new BadRequestException("Invalid date");
-            }
-        }
-        else{
-            throw new BadRequestException("Invalid date");
-        }
-    }
 
     @PostMapping("/login")//ok
     public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session) throws BadRequestException {
@@ -125,10 +103,39 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user);
-
         return "Successfully login";
     }
+    @SneakyThrows
+    @PostMapping("/users/picture")
+    public User addPicture(@RequestParam(value = "avatar") MultipartFile file,
+                           HttpSession session) {
+        User user = validateUser(session);
+        if(file == null){
+            throw new IllegalValuePassedException("Please upload a file");
+        }
+        if(!file.getContentType().equalsIgnoreCase("image/png")){
+            throw new IllegalValuePassedException("Please upload a png file");
+        }
+        byte[] fileBytes = file.getBytes();
 
+        String avatarUrl = UPLOAD_PATH + user.getId() + System.currentTimeMillis();
+        Path path = Paths.get(avatarUrl);
+        Files.write(path, fileBytes);
+        user.setAvatar(avatarUrl);
+        userRepository.save(user);
+        return user;
+    }
+    @PostMapping("/users/follow/{id}")
+    public User followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
+        User user = validateUser(session);
+        Optional<User> followedUser = userRepository.findById(id);
+        if (!followedUser.isPresent()){
+            throw new BadRequestException("No such user");
+        }
+        userDao.followUser(user, followedUser.get());
+        return user;
+    }
+    //put
     @PutMapping("/users/pi")
     public User updateUser(HttpSession session, @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
         User user = validateUser(session);
@@ -145,6 +152,7 @@ Minimum eight in length .{8,} (with the anchors)
         userRepository.save(user);
         return user;
     }
+
     @PutMapping("users/pw")
     public User changePassword(HttpSession session, @RequestBody ChangePasswordUserDTO dto) throws BadRequestException {
         User user = validateUser(session);
@@ -158,16 +166,7 @@ Minimum eight in length .{8,} (with the anchors)
         }
     }
 
-    @PostMapping("/users/follow/{id}")
-    public User followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
-        User user = validateUser(session);
-        Optional<User> followedUser = userRepository.findById(id);
-        if (!followedUser.isPresent()){
-            throw new BadRequestException("No such user");
-        }
-        userDao.followUser(user, followedUser.get());
-        return user;
-    }
+
 
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
@@ -180,8 +179,6 @@ Minimum eight in length .{8,} (with the anchors)
         userDao.unFollowUser(user, targetUser.get());
         return user;
     }
-
-
 
     //GET MAPPINGS
     @SneakyThrows
@@ -205,24 +202,31 @@ Minimum eight in length .{8,} (with the anchors)
         searchResult.addAll(lastNameResult);
         return searchResult;
     }
-    @SneakyThrows
-    @PostMapping("/users/picture")
-    public User addPicture(@RequestParam(value = "avatar") MultipartFile file,
-                           HttpSession session) {
-        User user = validateUser(session);
-        if(file == null){
-            throw new IllegalValuePassedException("Please upload a file");
-        }
-        if(!file.getContentType().equalsIgnoreCase("image/png")){
-            throw new IllegalValuePassedException("Please upload a png file");
-        }
-        byte[] fileBytes = file.getBytes();
 
-        String avatarUrl = UPLOAD_PATH + user.getId() + System.currentTimeMillis();
-        Path path = Paths.get(avatarUrl);
-        Files.write(path, fileBytes);
-        user.setAvatar(avatarUrl);
-        userRepository.save(user);
-        return user;
+  
+
+    private boolean isPasswordCorrect(String password, String confirmPassword) throws BadRequestException {
+        if (!confirmPassword.equals(password)) {
+            throw new BadRequestException("Passwords must match");
+        }
+        if (!password.matches(PASSWORD_REGEX)) {
+            throw  new BadRequestException("Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
+        }
+        if (!password.equals(confirmPassword.trim())){
+            throw  new BadRequestException("Password can`t have blank characters");
+        }
+        return true;
     }
+    private void validateDate(@RequestBody String date) throws BadRequestException, SQLException {
+        if (date.matches(DATE_REGEX)){
+            if (LocalDate.parse(date).isAfter(LocalDate.now())||
+                    LocalDate.parse(date).isBefore(MIN_DATE_REQUIRED_FOR_REGISTRATION)){
+                throw new BadRequestException("Invalid date");
+            }
+        }
+        else{
+            throw new BadRequestException("Invalid date");
+        }
+    }
+
 }
