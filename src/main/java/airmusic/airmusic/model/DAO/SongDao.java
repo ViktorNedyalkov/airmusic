@@ -41,21 +41,21 @@ public class SongDao {
     }
 
     public List<Song> myFavouriteSongs(User user) throws SQLException {
-        List<Song> myFavouriteSongs = new ArrayList<>();
         try (Connection connection =jdbcTemplate.getDataSource().getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_MY_FAVOURITE_SONG_SQL)) {
             ps.setLong(1, user.getId());
             ResultSet rs = ps.executeQuery();
+            List<Song> myFavouriteSongs = new ArrayList<>();
             while (rs.next()) {
                 myFavouriteSongs.add(songRepository.findById(rs.getLong(1)));
             }
-
-        } catch (SQLException e) {
+            return myFavouriteSongs;
         }
-        return myFavouriteSongs;
+
     }
     public void likeSong(User user, Song song) throws BadRequestException {
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(LIKE_SONG_SQL)) {
+        try  (Connection connection = jdbcTemplate.getDataSource().getConnection();
+              PreparedStatement ps = connection.prepareStatement(LIKE_SONG_SQL)) {
             ps.setLong(1,user.getId());
             ps.setLong(2,song.getId());
             ps.execute();
@@ -64,7 +64,8 @@ public class SongDao {
         }
     }
     public void dislikeSong(User user, Song song) throws SQLException, BadRequestException {
-        try (PreparedStatement ps = DBmanager.getConnection().prepareStatement(DISLIKE_SONG_SQL)) {
+        try  (Connection connection = jdbcTemplate.getDataSource().getConnection();
+              PreparedStatement ps = connection.prepareStatement(DISLIKE_SONG_SQL)) {
             ps.setLong(1,user.getId());
             ps.setLong(2,song.getId());
 

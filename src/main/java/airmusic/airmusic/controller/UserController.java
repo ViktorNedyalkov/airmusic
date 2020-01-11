@@ -209,13 +209,12 @@ Minimum eight in length .{8,} (with the anchors)
     @PostMapping("/users/picture")
     public User addPicture(@RequestParam(value = "avatar") MultipartFile file,
                            HttpSession session) {
-        //is user logged in
         User user = validateUser(session);
         if(file == null){
             throw new IllegalValuePassedException("Please upload a file");
         }
         if(!file.getContentType().equalsIgnoreCase("image/png")){
-            throw new IllegalValuePassedException("Please upload an png file");
+            throw new IllegalValuePassedException("Please upload a png file");
         }
         byte[] fileBytes = file.getBytes();
 

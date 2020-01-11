@@ -4,6 +4,7 @@ import airmusic.airmusic.exceptions.BadRequestException;
 import airmusic.airmusic.exceptions.NotLoggedUserException;
 import airmusic.airmusic.model.DAO.PlaylistsDao;
 import airmusic.airmusic.model.DAO.SongDao;
+import airmusic.airmusic.model.DTO.EditPlaylistDTO;
 import airmusic.airmusic.model.DTO.TrackToListDTO;
 import airmusic.airmusic.model.DTO.PlaylistCreateDTO;
 import airmusic.airmusic.model.DTO.ResponsePlaylistDTO;
@@ -13,6 +14,7 @@ import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.PlaylistRepository;
 import airmusic.airmusic.model.repositories.SongRepository;
 
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,37 +33,28 @@ public class PlaylistController extends AbstractController{
     private PlaylistsDao playlistsDao;
     @Autowired
     private SongDao songDao;
+    //post
     @PostMapping("/playlists")
     public Playlist createPlaylist(HttpSession session, @RequestBody PlaylistCreateDTO dto) throws NotLoggedUserException, SQLException {
         User user = validateUser(session);
         Playlist playlist = new Playlist();
         playlist.setCreator(user);
         playlist.setTitle(dto.getTitle());
-        playlist.setName(dto.getName());
+        playlist.setDescription(dto.getName());
 
         return playlistRepository.save(playlist);
     }
-    @PostMapping("/users/playlists/track/add")
+    @PostMapping("/playlists/track/")
     public ResponsePlaylistDTO addTrackToList(HttpSession session, @RequestBody TrackToListDTO dto) throws NotLoggedUserException, BadRequestException, SQLException {
         User user = validateUser(session);
-        Optional<Playlist> playlist = playlistRepository.findById(dto.getPlaylist_id());
-        Song song = songRepository.findById(dto.getSong_id());
-        if (!playlist.isPresent()){
-            throw new BadRequestException("Not such a playlist found");
-        }
-        if (!playlistRepository.findAllByCreator_Id(user.getId()).contains(playlist.get())){
-            throw new BadRequestException("Not Allowed Correction, you are not the owner of the Playlist");
-        }
-        if (song==null){
-            throw new BadRequestException("Not such a song  found");
-        }
-        if (playlistsDao.containsSong(dto.getPlaylist_id(),dto.getSong_id())){
-            throw new BadRequestException("Song already added");
-        }
-        return  new ResponsePlaylistDTO(playlistsDao.addSongToPlaylist(playlist.get(),song),
+        Playlist playlist = getPlaylist(dto.getPlaylist_id(), user);
+        Song song = preparedSongForPlaylist(dto);
+        return  new ResponsePlaylistDTO(playlistsDao.addSongToPlaylist(playlist,song),
                                         songDao.playlistSongs(dto.getPlaylist_id()));
     }
 
+
+    //get
     @GetMapping("/users/playlists/myLists")
     public List<Playlist> myLists(HttpSession session) {
         User user = validateUser(session);
@@ -81,22 +74,64 @@ public class PlaylistController extends AbstractController{
         }
         return songDao.playlistSongs(id);
     }
-    @DeleteMapping("/playlists")
+
+    //delete
+    @SneakyThrows
+    @DeleteMapping("playlists/{playlist_id}")
+    public void deletePlaylist(HttpSession session,@PathVariable("playlist_id") long id){
+        User user = validateUser(session);
+        Optional<Playlist> playlist = playlistRepository.findById(id);
+        if (!playlist.isPresent()){
+            throw new BadRequestException("Playlist does`n exist");
+        }
+        if (playlist.get().getCreator()!= user){
+            throw new NotLoggedUserException("User not allowed to remove playlist");
+        }
+        playlistRepository.delete(playlist.get());
+    }
+    @DeleteMapping("/playlists/track")
     public ResponsePlaylistDTO removeSongFromPlaylist(HttpSession session, @RequestBody TrackToListDTO dto) throws BadRequestException, SQLException {
         User user = validateUser(session);
-        Optional<Playlist> playlist = playlistRepository.findById(dto.getPlaylist_id());
+        Playlist playlist = getPlaylist(dto.getPlaylist_id(),user);
+        Song song = preparedSongForPlaylist(dto);
+        playlistsDao.removeFromPlaylist(playlist,song);
+        return  new ResponsePlaylistDTO(playlist,
+                songDao.playlistSongs(dto.getPlaylist_id()));
+    }
+
+    //put
+    @SneakyThrows
+    @PutMapping("/playlist/")
+    public void editPlaylist(HttpSession session, @RequestBody EditPlaylistDTO dto){
+        User user = validateUser(session);
+        Playlist playlist = getPlaylist(dto.getPlaylistId(),user);
+        playlist.setDescription(dto.getDescription());
+        playlist.setTitle(dto.getTitle());
+        playlistRepository.save(playlist);
+    }
+
+
+    //private
+
+    private Song preparedSongForPlaylist(@RequestBody TrackToListDTO dto) throws BadRequestException, SQLException {
         Song song = songRepository.findById(dto.getSong_id());
-        if (!playlist.isPresent()){
-            throw new BadRequestException("Not such a playlist found");
-        }
-        if (!playlistRepository.findAllByCreator_Id(user.getId()).contains(playlist.get())){
-            throw new BadRequestException("Not Allowed Correction, you are not the owner of the Playlist");
-        }
         if (song==null){
             throw new BadRequestException("Not such a song  found");
         }
-        playlistsDao.removeFromPlaylist(playlist.get(),song);
-        return  new ResponsePlaylistDTO(playlist.get(),
-                songDao.playlistSongs(dto.getPlaylist_id()));
+        if (playlistsDao.containsSong(dto.getPlaylist_id(),dto.getSong_id())){
+            throw new BadRequestException("Song already added");
+        }
+        return song;
+    }
+
+    private Playlist getPlaylist(long playlist_id, User user) throws BadRequestException {
+        Optional<Playlist> playlist = playlistRepository.findById(playlist_id);
+        if (!playlist.isPresent()){
+            throw new BadRequestException("Not such a playlist found");
+        }
+        if (playlist.get().getCreator()!=user){
+            throw new BadRequestException("Not Allowed Correction, you are not the owner of the Playlist");
+        }
+        return playlist.get();
     }
 }

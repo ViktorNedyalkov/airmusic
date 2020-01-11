@@ -12,19 +12,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
+
 
 @Component
 public class PlaylistsDao {
-    private static final String ADD_SONG_TO_PLAYLIST_SQL = "INSERT INTO playlists_have_tracks VALUES(?,?)";
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private SongRepository songRepository;
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private static final String ADD_SONG_TO_PLAYLIST_SQL = "INSERT INTO playlists_have_tracks VALUES(?,?)";
     private static final String CONTAINS_SONG_SQL = "SELECT * FROM playlists_have_tracks WHERE playlist_id =? AND track_id =?;";
+    private static final String DELETE_FROM_PLAYLIST_SQL = "DELETE FROM playlists_have_tracks where playlist_id =? AND track_id = ?;";
 
     public boolean containsSong(long playlist_id,long song_id) throws SQLException {
         try(Connection connection = jdbcTemplate.getDataSource().getConnection();
@@ -37,7 +34,8 @@ public class PlaylistsDao {
     }
 
     public Playlist addSongToPlaylist(Playlist playlist, Song song) throws SQLException {
-        try(PreparedStatement ps = jdbcTemplate.getDataSource().getConnection().prepareStatement(ADD_SONG_TO_PLAYLIST_SQL)) {
+        try(Connection connection = jdbcTemplate.getDataSource().getConnection();
+            PreparedStatement ps = connection.prepareStatement(ADD_SONG_TO_PLAYLIST_SQL)) {
             ps.setLong(1, playlist.getId());
             ps.setLong(2, song.getId());
             ps.execute();
@@ -46,11 +44,9 @@ public class PlaylistsDao {
         }
     }
 
-
     public Playlist removeFromPlaylist(Playlist playlist, Song song) throws SQLException {
-        String sql = "DELETE FROM playlists_have_tracks where playlist_id =? AND track_id = ?;";
         try(Connection connection = jdbcTemplate.getDataSource().getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql)) {
+            PreparedStatement ps = connection.prepareStatement(DELETE_FROM_PLAYLIST_SQL)) {
             ps.setLong(1,playlist.getId());
             ps.setLong(2,song.getId());
             ps.execute();

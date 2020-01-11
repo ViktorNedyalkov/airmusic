@@ -55,10 +55,10 @@ public class SongController extends  AbstractController{
     }
 
     @GetMapping("user/{user_id}/songs")
-    public List<Song> songsByUser(@PathVariable(value = "user_id") long userId){
+    public List<Song> songsByUser(@PathVariable(value = "user_id") long userId) throws NotFoundException {
         if(userRepository.findById(userId) == null){
             
-            throw new UserNotFoundException();
+            throw new NotFoundException("User not found");
         }
         return songRepository.findAllByUploaderId(userId);
     }

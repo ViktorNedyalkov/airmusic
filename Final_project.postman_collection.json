@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d6f158f2-f472-4cdf-b936-68ed1a2c1f99",
+		"_postman_id": "9393b3c6-aa66-46fa-928e-da49c4f6d19a",
 		"name": "Final_project",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -40,7 +40,7 @@
 			"response": []
 		},
 		{
-			"name": "Search User by firstName",
+			"name": "Search User by firstName or Last Name",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -56,7 +56,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"email\" : \"as \",\n\t\"password\" : \"vasko\"\n\n}",
+					"raw": "{\n\t\"searchingFor\" : \"as \",\n\t\"password\" : \"vasko\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -91,7 +91,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"email\" : \"vasko93@abv.bg\",\n\t\"password\" : \"AB-cdEF91\",\n\t\"confirmPassword\" : \"AB-cdEF91\",\n\t\"firstName\" : \"vasil\",\n\t\"lastName\" : \"vasilev\",\n\t\"gender\" : 1,\n\t\"birthDate\" : \"1991-01-01\"\n}",
+					"raw": "{\n\t\"email\" : \"back00@abv.bg\",\n\t\"password\" : \"AB-cdEF91\",\n\t\"confirmPassword\" : \"AB-cdEF91\",\n\t\"firstName\" : \"vasil\",\n\t\"lastName\" : \"vasilev\",\n\t\"gender\" : 1,\n\t\"birthDate\" : \"1991-01-01\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -621,6 +621,83 @@
 						"users",
 						"playlists",
 						"myLists"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search user by name",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/search/user",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"search",
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "setAvatar",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "avatar",
+							"type": "file",
+							"src": "/C:/Users/back0/OneDrive/Desktop/pngFile.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8080/users/picture",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"users",
+						"picture"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "activate user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "avatar",
+							"type": "file",
+							"src": "/C:/Users/back0/OneDrive/Desktop/pngFile.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8080/users/picture",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"users",
+						"picture"
 					]
 				}
 			},

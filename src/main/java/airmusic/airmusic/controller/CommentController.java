@@ -91,9 +91,9 @@ public class CommentController extends AbstractController {
         commentRepository.delete(comment);
     }
 
-    private void checkIfSongExists(long songId) {
+    private void checkIfSongExists(long songId) throws NotFoundException {
         if (songRepository.findById(songId) == null) {
-            throw new SongNotFoundException();
+            throw new NotFoundException("Song not found");
         }
     }
 
