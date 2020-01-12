@@ -58,15 +58,18 @@ public class SongController extends  AbstractController{
         return songRepository.findAllByTitleContaining(songSearchDTO.getTitle());
     }
 
-    @GetMapping("/songs/test")
-    public List<Song> test(@RequestBody @Valid SongSearchDTO songSearchDTO){
-
-
-
-        //fixme
-        //return songRepository.findAllByLikes(2);
-        return null;
+    @SneakyThrows
+    @GetMapping("/songs/search/byUploadDateAndNumberOfLikes")
+    public List<Song> searchByUloadDateAndNumberOfLikes(@RequestBody @Valid SongSearchDTO songSearchDTO){
+        return songDao.getSongsByUploadDateAndNumberOfLikes();
     }
+
+    @SneakyThrows
+    @GetMapping("/songs/search/byUploadDate")
+    public List<Song> searchByUploadDate(){
+        return songRepository.findAllByOrderByUploadDate();
+    }
+    
     @SneakyThrows
     @GetMapping("/songs/{id}")
     public Song getSongById(@PathVariable("id") long id){
