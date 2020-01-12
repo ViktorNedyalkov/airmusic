@@ -187,7 +187,7 @@ public class SongDao {
         user.setLastName(rs.getString("last_name"));
         user.setFirstName(rs.getString("first_name"));
         user.setEmail(rs.getString("email"));
-        user.setBirthDate(rs.getDate("birth_date").toString());
+        user.setBirthDate(rs.getDate("birth_date").toLocalDate());
         Gender gender = new Gender();
         gender.setName(rs.getString("gender_name"));
         user.setGender(gender);

@@ -41,11 +41,7 @@ public class UserDao {
               PreparedStatement ps = connection.prepareStatement(FOLLOW_USERS_SQL)) {
             ps.setLong(1, follower.getId());
             ps.setLong(2, following.getId());
-            boolean userIsFollowed =!ps.execute();
-            System.out.println(userIsFollowed);
-            if (userIsFollowed) {
-                throw new BadRequestException("User is already followed");
-            }
+            ps.execute();
         }
         catch (java.sql.SQLIntegrityConstraintViolationException e){
             throw new BadRequestException("User already followed");

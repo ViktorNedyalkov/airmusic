@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 
 
 @ToString
@@ -27,13 +28,13 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "gender_id")
     private Gender gender;
-    private String birthDate;
+    private LocalDate birthDate;
     private String avatar;
     private boolean activated;
 
 
 
-    public User(long id, String email, String firstName, String lastName, long gender, String birthDate) {
+    public User(long id, String email, String firstName, String lastName, LocalDate birthDate) {
         this.id = id;
         this.email = email;
         this.firstName = firstName;

@@ -13,7 +13,6 @@ import javax.persistence.*;
 public class Playlist  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idplaylist")
     private long id;
     @Column(name = "title")
     private String title;

@@ -68,12 +68,12 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getFirstName().isEmpty()
                 || dto.getLastName().isEmpty()
                 || dto.getGender().isEmpty()
-                || dto.getBirthDate().isEmpty()) {
+                ) {
             throw new BadRequestException("All fills are required");
         }
         User user = dto.toUser();
         validateGender(dto.getGender(),user);
-        validateDate(dto.getBirthDate());
+        validateDate(dto.getBirthDate().toString());
 
         userRepository.save(user);
         new MailSender(user.getEmail(),
@@ -138,7 +138,9 @@ Minimum eight in length .{8,} (with the anchors)
         Files.write(path, fileBytes);
         user.setAvatar(avatarUrl);
         userRepository.save(user);
-        Files.deleteIfExists(Paths.get(oldAvatarUrl));
+        if (oldAvatarUrl!=null) {
+            Files.deleteIfExists(Paths.get(oldAvatarUrl));
+        }
         return new ResponseUserDTO(user);
     }
 
@@ -165,7 +167,7 @@ Minimum eight in length .{8,} (with the anchors)
         }
         updatedUser.toUser(user);
         validateGender(updatedUser.getGender(),user);
-        validateDate(updatedUser.getBirthDate());
+        validateDate(updatedUser.getBirthDate().toString());
         userRepository.save(user);
         return new ResponseUserDTO(user);
     }

@@ -29,7 +29,7 @@ public class ResponseUserDTO {
         this.firstName = user.getFirstName();
         this.gender=user.getGender().getName();
         this.lastName =user.getLastName();
-        this.birthDate = user.getBirthDate();
+        this.birthDate = user.getBirthDate().toString();
         this.avatar = user.getAvatar();
         this.activated = user.isActivated();
     }
