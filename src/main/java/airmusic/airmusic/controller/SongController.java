@@ -1,10 +1,14 @@
 package airmusic.airmusic.controller;
 
+import airmusic.airmusic.AmazonClient;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
+import airmusic.airmusic.model.DTO.SongWithLikesDTO;
+import airmusic.airmusic.model.POJO.Genre;
 import airmusic.airmusic.model.POJO.Song;
+import airmusic.airmusic.model.POJO.Uploader;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
@@ -28,8 +32,10 @@ import java.util.Optional;
 @RestController
 public class SongController extends  AbstractController{
 
-    private static final String UPLOAD_PATH = "D:\\JAVA\\airmusic\\src\\main\\resources\\songs\\";
 
+
+    @Autowired
+    private AmazonClient amazonClient;
     @Autowired
     private SongDao songDao;
     @Autowired
@@ -58,10 +64,12 @@ public class SongController extends  AbstractController{
         return songRepository.findAllByTitleContaining(songSearchDTO.getTitle());
     }
 
+
     @SneakyThrows
-    @GetMapping("/songs/search/byUploadDateAndNumberOfLikes")
-    public List<Song> searchByUloadDateAndNumberOfLikes(@RequestBody @Valid SongSearchDTO songSearchDTO){
-        return songDao.getSongsByUploadDateAndNumberOfLikes();
+    @GetMapping("/songs/search/byNumberOfLikes")
+    public List<SongWithLikesDTO> searchByNumberOfLikes(){
+
+        return songDao.getSongsByNumberOfLikes();
     }
 
     @SneakyThrows
@@ -69,7 +77,7 @@ public class SongController extends  AbstractController{
     public List<Song> searchByUploadDate(){
         return songRepository.findAllByOrderByUploadDate();
     }
-    
+
     @SneakyThrows
     @GetMapping("/songs/{id}")
     public Song getSongById(@PathVariable("id") long id){
@@ -80,7 +88,29 @@ public class SongController extends  AbstractController{
 
         }
     }
+    @SneakyThrows
+    @GetMapping("/songs/{id}/withLikes")
+    public SongWithLikesDTO getSongWithLikesById(@PathVariable("id") long id){
+        if(songRepository.findById(id) != null){
+            Song song = songRepository.findById(id);
 
+
+            return SongWithLikesDTO.getFromSong(song,
+                    songDao.getNumberOfLikesForTrackId(song.getId()));
+        }else{
+            throw new NotFoundException("Song not found");
+
+        }
+    }
+
+    @SneakyThrows
+    @GetMapping("user/liked")
+    public List<Song> getLikedByUser(HttpSession session){
+        User user = validateUser(session);
+
+        return songDao.getLikedByUser(user.getId());
+
+    }
     @GetMapping("user/{user_id}/songs")
     public List<Song> songsByUser(@PathVariable(value = "user_id") long userId) throws NotFoundException {
         Optional<User> optionalUser = userRepository.findById(userId);
@@ -100,7 +130,7 @@ public class SongController extends  AbstractController{
                         @RequestParam(value = "song")MultipartFile file,
                         HttpSession session){
 
-
+        System.out.println(genre_id);
         User uploader = validateUser(session);
         if(file == null){
             throw new IllegalValuePassedException("Please upload a file");
@@ -108,19 +138,13 @@ public class SongController extends  AbstractController{
         if(file.getContentType() == null || !file.getContentType().equalsIgnoreCase("audio/mpeg")){
             throw new IllegalValuePassedException("Please upload an audio file");
         }
-        byte[] fileBytes = file.getBytes();
-        String songUrl = UPLOAD_PATH + file.getOriginalFilename() + System.currentTimeMillis();
-        Path path = Paths.get(songUrl);
-        Files.write(path, fileBytes);
-        Song song = new Song();
-        song.setTitle(title);
-        song.setGenre_id(Long.valueOf(genre_id));
-        song.setDescription(description);
-        song.setTrackUrl(songUrl);
-        song.setUploader(uploader);
-        song.setUploadDate(new Date());
-        songRepository.save(song);
-        return song;
+
+        Thread uploadToAmazon = new Uploader(file, amazonClient, description, genre_id, title, uploader, songRepository);
+        uploadToAmazon.start();
+
+
+
+        return null;
     }
 
     //put mappings
@@ -156,7 +180,7 @@ public class SongController extends  AbstractController{
     //delete mappings
 
     @SneakyThrows
-    @DeleteMapping("/songs/{/{song_id}")
+    @DeleteMapping("/songs/{song_id}")
     public Song deleteSong(@PathVariable("song_id") long song_id, HttpSession session){
         //is user logged in
         User user = validateUser(session);
@@ -178,7 +202,8 @@ public class SongController extends  AbstractController{
         //from file system
         File file = new File(song.getTrackUrl());
         System.out.println(file.exists());
-
+        //delete from amazon
+        amazonClient.deleteFileFromS3Bucket(song.getAmazonUrl());
         //from database
         songRepository.delete(song);
         //don't know if i should return anything

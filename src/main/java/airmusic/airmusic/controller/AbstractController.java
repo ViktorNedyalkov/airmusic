@@ -29,6 +29,17 @@ public abstract class AbstractController {
         return errorDTO;
     }
 
+    @ResponseStatus(value = HttpStatus.SERVICE_UNAVAILABLE)
+    @ExceptionHandler({AmazonServiceException.class})
+    public ErrorDTO amazonServiceException(Exception e){
+        ErrorDTO errorDTO = new ErrorDTO(
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                e.getClass().getName());
+        return errorDTO;
+    }
+
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Size of file is too large")
     @ExceptionHandler(MultipartException.class)
     public void uploadSizeExceeded() {

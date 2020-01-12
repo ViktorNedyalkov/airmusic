@@ -1,6 +1,7 @@
 package airmusic.airmusic.model.DTO;
 
 
+import airmusic.airmusic.model.POJO.Genre;
 import airmusic.airmusic.model.POJO.Song;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +20,8 @@ public class SongUploadDTO {
     public Song toSong(){
         Song song = new Song();
         song.setDescription(description);
-        song.setGenre_id(genre_id);
+        Genre genre = new Genre();
+        genre.setId(genre_id);
         song.setTitle(title);
 
         return song;
