@@ -12,11 +12,12 @@ import javax.persistence.*;
 @Table(name = "playlists")
 public class Playlist  {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idplaylist")
     private long id;
     @Column(name = "title")
     private String title;
-    @Column (name = "name") //TODO what is this for?
+    @Column (name = "description")
     private String description;
     @ManyToOne
     @JoinColumn(name = "creator_id")

@@ -183,7 +183,6 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
 
-
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
     public ResponseUserDTO unfollowUser(HttpSession session, @PathVariable("id") long id) throws SQLException, BadRequestException {
@@ -218,7 +217,6 @@ Minimum eight in length .{8,} (with the anchors)
         searchResult.addAll(lastNameResult);
         return ResponseUserDTO.usersToRespond(searchResult);
     }
-
 
 
     private boolean isPasswordCorrect(String password, String confirmPassword) throws BadRequestException {
