@@ -53,6 +53,21 @@ public class SongDao {
             "JOIN genders AS g ON(g.id = us.gender_id) " +
             "JOIN genre as genre ON(t.genre_id = genre.id) " +
             "GROUP BY track_id ORDER BY number_of_likes DESC;";
+    private static final String GET_BY_UPLOAD_DATE = "SELECT COUNT(*) AS number_of_likes, " +
+            "t.id AS song_id, " +
+            "t.title, " +
+            "t.uploader_id, " +
+            "g.name AS gender_name, " +
+            "t.track_url, t.upload_date, " +
+            "t.description, us.id AS user_id, " +
+            "us.email, us.first_name, " +
+            "us.last_name, genre.name AS genre_name, " +
+            "us.birth_date, us.activated, us.avatar FROM users_likes_tracks AS u " +
+            "JOIN tracks AS t ON(u.track_id = t.id) " +
+            "JOIN users AS us ON(us.id = t.uploader_id) " +
+            "JOIN genders AS g ON(g.id = us.gender_id) " +
+            "JOIN genre as genre ON(t.genre_id = genre.id) GROUP BY track_id " +
+            "ORDER BY t.upload_date DESC;";
 
     public List<Song> myFavouriteSongs(User user) throws SQLException {
         try (Connection connection =jdbcTemplate.getDataSource().getConnection();
@@ -67,7 +82,7 @@ public class SongDao {
         }
 
     }
-    //todo implement
+
     public List<Song> getSongsByNumberOfLikes() throws SQLException{
         try (Connection connection =jdbcTemplate.getDataSource().getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_BY_NUMBER_OF_LIKES)) {

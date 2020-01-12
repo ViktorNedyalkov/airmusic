@@ -58,6 +58,11 @@ public class SongController extends  AbstractController{
 
         return songRepository.findAllByTitleContaining(songSearchDTO.getTitle());
     }
+    @SneakyThrows
+    @GetMapping("songs/search/byUploadDate")
+    public List<Song> searchForSongByUploadDate(){
+        return songRepository.findAllByOrderByUploadDate();
+    }
 
     @SneakyThrows
     @GetMapping("/songs/search/byNumberOfLikes")
