@@ -5,6 +5,7 @@ import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
+import airmusic.airmusic.model.DTO.SongWithLikesDTO;
 import airmusic.airmusic.model.POJO.Genre;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.Uploader;
@@ -66,7 +67,7 @@ public class SongController extends  AbstractController{
 
     @SneakyThrows
     @GetMapping("/songs/search/byNumberOfLikes")
-    public List<Song> searchByNumberOfLikes(){
+    public List<SongWithLikesDTO> searchByNumberOfLikes(){
 
         return songDao.getSongsByNumberOfLikes();
     }
@@ -87,7 +88,29 @@ public class SongController extends  AbstractController{
 
         }
     }
+    @SneakyThrows
+    @GetMapping("/songs/{id}/withLikes")
+    public SongWithLikesDTO getSongWithLikesById(@PathVariable("id") long id){
+        if(songRepository.findById(id) != null){
+            Song song = songRepository.findById(id);
 
+
+            return SongWithLikesDTO.getFromSong(song,
+                    songDao.getNumberOfLikesForTrackId(song.getId()));
+        }else{
+            throw new NotFoundException("Song not found");
+
+        }
+    }
+
+    @SneakyThrows
+    @GetMapping("user/liked")
+    public List<Song> getLikedByUser(HttpSession session){
+        User user = validateUser(session);
+
+        return songDao.getLikedByUser(user.getId());
+
+    }
     @GetMapping("user/{user_id}/songs")
     public List<Song> songsByUser(@PathVariable(value = "user_id") long userId) throws NotFoundException {
         Optional<User> optionalUser = userRepository.findById(userId);
