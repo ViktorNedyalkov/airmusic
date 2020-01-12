@@ -84,7 +84,7 @@ Minimum eight in length .{8,} (with the anchors)
 
     @SneakyThrows
     @PostMapping("/users/activation/{id}")
-    public ResponseUserDTO activateUser(@PathVariable("id") long userId){
+    public ResponseUserDTO activateUser(HttpSession session, @PathVariable("id") long userId){
        Optional<User> user = userRepository.findById(userId);
        if (!user.isPresent()){
            throw new BadRequestException("No such user");
@@ -93,7 +93,8 @@ Minimum eight in length .{8,} (with the anchors)
            throw new BadRequestException("user already activated");
        }
        user.get().setActivated(true);
-       return new ResponseUserDTO(userRepository.save( user.get()));
+       session.setAttribute(LOGGED, user.get());
+       return new ResponseUserDTO(userRepository.save(user.get()));
     }
 
     @PostMapping("/login")//ok

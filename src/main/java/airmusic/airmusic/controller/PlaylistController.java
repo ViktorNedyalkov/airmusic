@@ -81,7 +81,7 @@ public class PlaylistController extends AbstractController{
     //delete
     @SneakyThrows
     @DeleteMapping("playlists/{playlist_id}")
-    public void deletePlaylist(HttpSession session,@PathVariable("playlist_id") long id){
+    public String deletePlaylist(HttpSession session,@PathVariable("playlist_id") long id){
         User user = validateUser(session);
         Optional<Playlist> playlist = playlistRepository.findById(id);
         if (!playlist.isPresent()){
@@ -91,6 +91,7 @@ public class PlaylistController extends AbstractController{
             throw new NotLoggedUserException("User not allowed to remove playlist");
         }
         playlistRepository.delete(playlist.get());
+        return "Successfully deleted Playlist: " + playlist.get().getTitle();
     }
     @DeleteMapping("/playlists/track")
     public ResponsePlaylistDTO removeSongFromPlaylist(HttpSession session, @RequestBody TrackToListDTO dto) throws BadRequestException, SQLException {

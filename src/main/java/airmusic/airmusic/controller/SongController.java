@@ -3,6 +3,7 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.AmazonClient;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
+import airmusic.airmusic.model.DTO.ResponseSongDTO;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
 import airmusic.airmusic.model.DTO.SongWithLikesDTO;
@@ -41,79 +42,70 @@ public class SongController extends  AbstractController{
     //get mappings
 
     @GetMapping("/songs")
-    public List<Song> returnAllSongs(){
-        return songRepository.findAll();
+    public List<ResponseSongDTO> returnAllSongs(){
+        return ResponseSongDTO.respondSongs(songRepository.findAll());
     }
     @SneakyThrows
     @GetMapping("/songs/search")
-    public List<Song> searchForSongByUsername(@RequestBody @Valid SongSearchDTO songSearchDTO){
-
+    public List<ResponseSongDTO> searchForSongByUsername(@RequestBody @Valid SongSearchDTO songSearchDTO){
         if(songSearchDTO==null){
             throw new BadRequestException();
         }
-
         if(songSearchDTO.getTitle() == null){
             throw new BadRequestException();
         }
-
-        return songRepository.findAllByTitleContaining(songSearchDTO.getTitle());
+        return ResponseSongDTO.respondSongs(songRepository.findAllByTitleContaining(songSearchDTO.getTitle()));
     }
 
 
     @SneakyThrows
     @GetMapping("/songs/search/byNumberOfLikes")
     public List<SongWithLikesDTO> searchByNumberOfLikes(){
-
         return songDao.getSongsByNumberOfLikes();
     }
 
     @SneakyThrows
     @GetMapping("/songs/search/byUploadDate")
-    public List<Song> searchByUploadDate(){
-        return songRepository.findAllByOrderByUploadDate();
+    public List<ResponseSongDTO> searchByUploadDate(){
+        return ResponseSongDTO.respondSongs(songRepository.findAllByOrderByUploadDate());
     }
 
     @SneakyThrows
     @GetMapping("/songs/{id}")
-    public Song getSongById(@PathVariable("id") long id){
-        if(songRepository.findById(id) != null){
-            return songRepository.findById(id);
+    public ResponseSongDTO getSongById(@PathVariable("id") long id){
+        Song song =songRepository.findById(id);
+        if(song != null){
+            return new ResponseSongDTO(song);
         }else{
             throw new NotFoundException("Song not found");
-
         }
     }
     @SneakyThrows
     @GetMapping("/songs/{id}/withLikes")
     public SongWithLikesDTO getSongWithLikesById(@PathVariable("id") long id){
-        if(songRepository.findById(id) != null){
-            Song song = songRepository.findById(id);
-
-
+        Song song = songRepository.findById(id);
+        if(song != null){
             return SongWithLikesDTO.getFromSong(song,
                     songDao.getNumberOfLikesForTrackId(song.getId()));
         }else{
             throw new NotFoundException("Song not found");
-
         }
     }
 
     @SneakyThrows
     @GetMapping("user/liked")
-    public List<Song> getLikedByUser(HttpSession session){
+    public List<ResponseSongDTO> getLikedByUser(HttpSession session){
         User user = validateUser(session);
-
-        return songDao.getLikedByUser(user.getId());
+        return ResponseSongDTO.respondSongs(songDao.getLikedByUser(user.getId()));
 
     }
     @GetMapping("user/{user_id}/songs")
-    public List<Song> songsByUser(@PathVariable(value = "user_id") long userId) throws NotFoundException {
+    public List<ResponseSongDTO> songsByUser(@PathVariable(value = "user_id") long userId) throws NotFoundException {
         Optional<User> optionalUser = userRepository.findById(userId);
         if(!optionalUser.isPresent()){
-            
             throw new NotFoundException("User not found");
         }
-        return songRepository.findAllByUploader_Id(userId);
+        return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(userId));
     }
 
     //post mappings
@@ -123,35 +115,31 @@ public class SongController extends  AbstractController{
                         @RequestParam String title,
                         @RequestParam String genre_id,
                         @RequestParam(value = "song")MultipartFile file,
-                        HttpSession session){
-
+                        HttpSession session) {
         System.out.println(genre_id);
         User uploader = validateUser(session);
-        if(file == null){
+        if (file == null) {
             throw new IllegalValuePassedException("Please upload a file");
         }
-        if(file.getContentType() == null || !file.getContentType().equalsIgnoreCase("audio/mpeg")){
+        if (file.getContentType() == null || !file.getContentType().equalsIgnoreCase("audio/mpeg")) {
             throw new IllegalValuePassedException("Please upload an audio file");
         }
-
         Thread uploadToAmazon = new Uploader(file, amazonClient, description, genre_id, title, uploader, songRepository);
         uploadToAmazon.start();
-
-
-
         return null;
     }
 
     //put mappings
 
     @PutMapping("song/{song_id}")
-    public Song editSongDescription(@PathVariable("song_id") long song_id,
+    public ResponseSongDTO editSongDescription(@PathVariable("song_id") long song_id,
                                     @RequestBody SongEditDTO songEditDTO,
                                     HttpSession session) throws NotLoggedUserException, NotFoundException {
 
         //validate if user is logged in
         User user = validateUser(session);
-        if(songRepository.findById(song_id) == null){
+        Song song = songRepository.findById(song_id);
+        if(song == null){
             throw new NotFoundException("Song not found");
         }
         if(songEditDTO == null){
@@ -160,7 +148,6 @@ public class SongController extends  AbstractController{
         if(songEditDTO.getDescription() == null){
             throw new BadRequestException("Please pass a valid value");
         }
-        Song song = songRepository.findById(song_id);
         if(user.getId() != song.getUploader().getId()){
             throw new NotLoggedUserException("You are not the owner of this song");
         }
@@ -168,7 +155,7 @@ public class SongController extends  AbstractController{
         //todo refactor
         song.setDescription(songEditDTO.getDescription());
         songRepository.save(song);
-        return song;
+        return new ResponseSongDTO(song);
     }
 
 
@@ -206,7 +193,7 @@ public class SongController extends  AbstractController{
     }
 
     @PostMapping("/songs/like/{song_id}")
-    public Song likeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
+    public ResponseSongDTO likeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
             BadRequestException {
         User user = validateUser(session);
         Song song = songRepository.findById(id);
@@ -214,10 +201,10 @@ public class SongController extends  AbstractController{
             throw  new BadRequestException("No such song found");
         }
         songDao.likeSong(user, song);
-        return song;
+        return new ResponseSongDTO(song);
     }
     @DeleteMapping("/songs/dislike/{song_id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
+    public ResponseSongDTO dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
             SQLException,
             BadRequestException {
         User user = validateUser(session);
@@ -226,25 +213,25 @@ public class SongController extends  AbstractController{
             throw  new BadRequestException("No such song found");
         }
         songDao.dislikeSong(user,song);
-        return song;
+        return new ResponseSongDTO(song);
     }
     @GetMapping("/songs/myFavouriteSongs")
-    public List<Song> myFavouriteSongs(HttpSession session) throws NotLoggedUserException, SQLException {
+    public List<ResponseSongDTO> myFavouriteSongs(HttpSession session) throws NotLoggedUserException, SQLException {
         User user = validateUser(session);
-        return songDao.myFavouriteSongs(user);
+        return ResponseSongDTO.respondSongs(songDao.myFavouriteSongs(user));
     }
     @GetMapping("/songs/mySongs")
-    public List<Song> mySongs(HttpSession session) throws NotLoggedUserException {
+    public List<ResponseSongDTO> mySongs(HttpSession session) throws NotLoggedUserException {
         User user = validateUser(session);
-        return songRepository.findAllByUploader_Id(user.getId());
+        return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(user.getId()));
     }
 
     @GetMapping("/songs/find/{song_title}")
-    public List<Song> findSong(@PathVariable ("song_title") String title){
-        return songRepository.findAllByTitleContaining(title);
+    public List<ResponseSongDTO> findSong(@PathVariable ("song_title") String title){
+        return ResponseSongDTO.respondSongs(songRepository.findAllByTitleContaining(title));
     }
     @GetMapping("/songs/{uploader_id}/")
-    public List<Song> getUploaderSong(@PathVariable("uploader_id") long id){
-        return songRepository.findAllByUploader_Id(id);
+    public List<ResponseSongDTO> getUploaderSong(@PathVariable("uploader_id") long id){
+        return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(id));
     }
 }
