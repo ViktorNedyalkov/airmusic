@@ -3,6 +3,7 @@ package airmusic.airmusic.model.DAO;
 import airmusic.airmusic.exceptions.BadRequestException;
 
 import airmusic.airmusic.model.POJO.Gender;
+import airmusic.airmusic.model.POJO.Genre;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
@@ -32,27 +33,26 @@ public class SongDao {
     private static final String GET_PLAYLIST_TRACKS_SQL = "SELECT track_id FROM playlists_have_tracks WHERE playlist_id =?;";
     //todo implement
     private static final String GET_BY_NUMBER_OF_LIKES = "SELECT COUNT(*) AS number_of_likes, " +
-            "t.id AS song_id, " +
-            "t.title, " +
+            "t.id AS song_id," +
+            " t.title, " +
             "t.uploader_id, " +
             "g.name AS gender_name, " +
             "t.track_url, " +
             "t.upload_date, " +
-            "t.description, us.id AS user_id, " +
+            "t.description, " +
+            "us.id AS user_id, " +
             "us.email, " +
             "us.first_name, " +
             "us.last_name, " +
-            "us.gender_id, " +
+            "genre.name AS genre_name, " +
             "us.birth_date, " +
             "us.activated, " +
             "us.avatar FROM users_likes_tracks AS u " +
             "JOIN tracks AS t ON(u.track_id = t.id) " +
             "JOIN users AS us ON(us.id = t.uploader_id) " +
             "JOIN genders AS g ON(g.id = us.gender_id) " +
-            "GROUP BY track_id " +
-            "ORDER BY number_of_likes, t.upload_date DESC;";
-
-
+            "JOIN genre as genre ON(t.genre_id = genre.id) " +
+            "GROUP BY track_id ORDER BY number_of_likes, t.upload_date DESC;";
     public List<Song> myFavouriteSongs(User user) throws SQLException {
         try (Connection connection =jdbcTemplate.getDataSource().getConnection();
              PreparedStatement ps = connection.prepareStatement(GET_MY_FAVOURITE_SONG_SQL)) {
@@ -91,8 +91,10 @@ public class SongDao {
                 song.setDescription(rs.getString("description"));
                 song.setId(rs.getLong("song_id"));
                 song.setTrackUrl("track_url");
-                //todo fix this maybe into another class
-                song.setGenre_id(rs.getLong("genre_id"));
+
+                Genre genre = new Genre();
+                genre.setName(rs.getString("genre_name"));
+                song.setGenre(genre);
                 song.setUploadDate(rs.getDate("upload_date"));
             }
             return getByNumberOfLikes;

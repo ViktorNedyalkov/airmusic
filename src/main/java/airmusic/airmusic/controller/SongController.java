@@ -4,6 +4,7 @@ import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
+import airmusic.airmusic.model.POJO.Genre;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
@@ -60,7 +61,7 @@ public class SongController extends  AbstractController{
 
     @SneakyThrows
     @GetMapping("/songs/search/byUploadDateAndNumberOfLikes")
-    public List<Song> searchByUloadDateAndNumberOfLikes(@RequestBody @Valid SongSearchDTO songSearchDTO){
+    public List<Song> searchByUploadDateAndNumberOfLikes(){
         return songDao.getSongsByUploadDateAndNumberOfLikes();
     }
 
@@ -69,7 +70,7 @@ public class SongController extends  AbstractController{
     public List<Song> searchByUploadDate(){
         return songRepository.findAllByOrderByUploadDate();
     }
-    
+
     @SneakyThrows
     @GetMapping("/songs/{id}")
     public Song getSongById(@PathVariable("id") long id){
@@ -114,7 +115,9 @@ public class SongController extends  AbstractController{
         Files.write(path, fileBytes);
         Song song = new Song();
         song.setTitle(title);
-        song.setGenre_id(Long.valueOf(genre_id));
+        Genre genre = new Genre();
+        genre.setId(Long.valueOf(genre_id));
+        song.setGenre(genre);
         song.setDescription(description);
         song.setTrackUrl(songUrl);
         song.setUploader(uploader);
