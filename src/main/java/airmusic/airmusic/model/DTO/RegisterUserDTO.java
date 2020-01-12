@@ -1,6 +1,7 @@
 package airmusic.airmusic.model.DTO;
 
 
+import airmusic.airmusic.model.POJO.Gender;
 import airmusic.airmusic.model.POJO.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,6 @@ public class RegisterUserDTO {
     public User toUser(){
         User user = new User();
         user.setPassword(this.password);
-        user.setGender(this.gender);
         user.setEmail(this.email);
         user.setFirstName(this.firstName);
         user.setLastName(this.lastName);

@@ -66,7 +66,7 @@ public class SongController extends  AbstractController{
     @SneakyThrows
     @PostMapping("/songs")
     public Song addSong(@RequestParam String description, @RequestParam String title, @RequestParam String genre_id, @RequestParam(value = "song")MultipartFile file, HttpSession session){
-        //is user logged in
+
         User uploader = validateUser(session);
         if(file == null){
             throw new IllegalValuePassedException("Please upload a file");
@@ -75,8 +75,6 @@ public class SongController extends  AbstractController{
             throw new IllegalValuePassedException("Please upload an audio file");
         }
         byte[] fileBytes = file.getBytes();
-
-
         String songUrl = UPLOAD_PATH + file.getOriginalFilename() + new Time(System.currentTimeMillis());
         Path path = Paths.get(songUrl);
         Files.write(path, fileBytes);
@@ -88,7 +86,6 @@ public class SongController extends  AbstractController{
         song.setTrack_url(songUrl);
         song.setUploader(uploader);
         song.setUpload_date(new Date());
-
         songRepository.save(song);
         return song;
     }

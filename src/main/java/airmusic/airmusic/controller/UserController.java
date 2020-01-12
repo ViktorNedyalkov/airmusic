@@ -18,11 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,15 +72,18 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getBirthDate().isEmpty()) {
             throw new BadRequestException("All fills are required");
         }
-        validateDate(dto.getBirthDate());
         User user = dto.toUser();
+        validateGender(dto.getGender(),user);
+        validateDate(dto.getBirthDate());
+
         userRepository.save(user);
         new airmusc.airmusic.MailSender(user.getEmail(),"Profile Activation ", "localhost:3306/users/activation/" +user.getId()).start();
         return "Successfully registered! Check mail for activation link!";
     }
+
     @SneakyThrows
     @PostMapping("/users/activation/{id}")
-    public User activateUser(@PathVariable("id") long userId){
+    public ResponseUserDTO activateUser(@PathVariable("id") long userId){
        Optional<User> user = userRepository.findById(userId);
        if (!user.isPresent()){
            throw new BadRequestException("No such user");
@@ -87,7 +92,7 @@ Minimum eight in length .{8,} (with the anchors)
            throw new BadRequestException("user already activated");
        }
        user.get().setActivated(true);
-       return userRepository.save( user.get());
+       return new ResponseUserDTO(userRepository.save( user.get()));
     }
 
     @PostMapping("/login")//ok
@@ -105,9 +110,14 @@ Minimum eight in length .{8,} (with the anchors)
         session.setAttribute(LOGGED, user);
         return "Successfully login";
     }
+    @PostMapping("/logout")//ok
+    public String logout(HttpSession session){
+        session.invalidate();
+        return "Logged out!";
+    }
     @SneakyThrows
     @PostMapping("/users/picture")
-    public User addPicture(@RequestParam(value = "avatar") MultipartFile file,
+    public ResponseUserDTO addPicture(@RequestParam(value = "avatar") MultipartFile file,
                            HttpSession session) {
         User user = validateUser(session);
         if(file == null){
@@ -117,49 +127,48 @@ Minimum eight in length .{8,} (with the anchors)
             throw new IllegalValuePassedException("Please upload a png file");
         }
         byte[] fileBytes = file.getBytes();
-
+        String oldAvatarUrl = user.getAvatar();
         String avatarUrl = UPLOAD_PATH + user.getId() + System.currentTimeMillis();
         Path path = Paths.get(avatarUrl);
         Files.write(path, fileBytes);
         user.setAvatar(avatarUrl);
         userRepository.save(user);
-        return user;
+        Files.deleteIfExists(Paths.get(oldAvatarUrl));
+        return new ResponseUserDTO(user);
     }
+
     @PostMapping("/users/follow/{id}")
-    public User followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
+    public ResponseUserDTO followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
         User user = validateUser(session);
         Optional<User> followedUser = userRepository.findById(id);
         if (!followedUser.isPresent()){
             throw new BadRequestException("No such user");
         }
         userDao.followUser(user, followedUser.get());
-        return user;
+        return new ResponseUserDTO(user);
     }
     //put
     @PutMapping("/users/pi")
-    public User updateUser(HttpSession session, @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
+    public ResponseUserDTO updateUser(HttpSession session, @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
         User user = validateUser(session);
         if (userDao.doesExist(updatedUser.getEmail())&&
             !user.getEmail().equals(updatedUser.getEmail())) {
             throw new BadRequestException("User already exists with this e-mail");
         }
-        user.setEmail(updatedUser.getEmail());
-        user.setFirstName(updatedUser.getFirstName());
-        user.setLastName(updatedUser.getLastName());
-        user.setGender(updatedUser.getGender());
+        updatedUser.toUser(user);
+        validateGender(updatedUser.getGender(),user);
         validateDate(updatedUser.getBirthDate());
-        user.setBirthDate(updatedUser.getBirthDate());
         userRepository.save(user);
-        return user;
+        return new ResponseUserDTO(user);
     }
 
     @PutMapping("users/pw")
-    public User changePassword(HttpSession session, @RequestBody ChangePasswordUserDTO dto) throws BadRequestException {
+    public ResponseUserDTO changePassword(HttpSession session, @RequestBody ChangePasswordUserDTO dto) throws BadRequestException {
         User user = validateUser(session);
         if (isPasswordCorrect(dto.getNewPassword(),dto.getConfirmNewPassword())&&
             BCrypt.checkpw(dto.getOldPassword(),user.getPassword())){
             user.setPassword(dto.getNewPassword());
-            return user;
+            return new ResponseUserDTO(user);
         }
         else {
             throw new BadRequestException("Wrong Credentials");
@@ -170,37 +179,37 @@ Minimum eight in length .{8,} (with the anchors)
 
     //DELETE MAPPINGS
     @DeleteMapping("/users/unfollow/{id}")
-    public User unfollowUser(HttpSession session, @PathVariable("id") long id) throws SQLException, BadRequestException {
+    public ResponseUserDTO unfollowUser(HttpSession session, @PathVariable("id") long id) throws SQLException, BadRequestException {
         User user = validateUser(session);
         Optional<User> targetUser = userRepository.findById(id);
         if (!targetUser.isPresent()){
             throw new BadRequestException("No such user");
         }
         userDao.unFollowUser(user, targetUser.get());
-        return user;
+        return new ResponseUserDTO(user);
     }
 
     //GET MAPPINGS
     @SneakyThrows
     @GetMapping("/users/followers")
-    public List<User> getFollowers(HttpSession session)  {
+    public List<ResponseUserDTO> getFollowers(HttpSession session)  {
         User user = validateUser(session);
-        return userDao.getFollowers(user);
+        return ResponseUserDTO.usersToRespond(userDao.getFollowers(user));
     }
 
     @GetMapping("/users/following")
-    public List<User> getFollowing(HttpSession session) throws SQLException {
+    public List<ResponseUserDTO> getFollowing(HttpSession session) throws SQLException {
         User user = validateUser(session);
-        return userDao.getFollowing(user);
+        return ResponseUserDTO.usersToRespond(userDao.getFollowing(user));
     }
 
     @GetMapping("users/find")
-    public List<User> findUser(@RequestBody SearchDTO dto){//finds users By firstName or LastName
-        List <User> searchResult = userRepository.findAllByFirstNameContaining(dto.getSearchingFor().trim());
+    public List<ResponseUserDTO> findUser(@RequestBody SearchDTO dto){//finds users By firstName or LastName
+        List<User> searchResult = userRepository.findAllByFirstNameContaining(dto.getSearchingFor().trim());
         List<User> lastNameResult = userRepository.findAllByLastNameContaining(dto.getSearchingFor().trim());
         searchResult.removeAll(lastNameResult);
         searchResult.addAll(lastNameResult);
-        return searchResult;
+        return ResponseUserDTO.usersToRespond(searchResult);
     }
 
 
@@ -227,6 +236,13 @@ Minimum eight in length .{8,} (with the anchors)
         else{
             throw new BadRequestException("Invalid date");
         }
+    }
+    @SneakyThrows
+    private void validateGender(String gender,User user) {
+        if (!gender.equals(gender.toLowerCase())){
+            throw  new BadRequestException("Invalid gender input");
+        }
+        user.setGender(userDao.setGender(gender));
     }
 
 }

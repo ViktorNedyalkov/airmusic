@@ -24,21 +24,20 @@ public class User {
     private String password;
     private String firstName;
     private String lastName;
-    //TODO map
-    @Column(name = "gender_id")
-    private String gender;
+    @ManyToOne
+    @JoinColumn(name = "gender_id")
+    private Gender gender;
     private String birthDate;
     private String avatar;
     private boolean activated;
 
 
 
-    public User(long id, String email, String firstName, String lastName, String gender, String birthDate) {
+    public User(long id, String email, String firstName, String lastName, long gender, String birthDate) {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.gender = gender;
         this.birthDate = birthDate;
     }
 

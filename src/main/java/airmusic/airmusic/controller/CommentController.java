@@ -106,7 +106,7 @@ public class CommentController extends AbstractController {
         commentDao.likeComment(user,comment);
         return comment;
     }
-    @DeleteMapping("/songs/dislike/{song_id}")
+    @DeleteMapping("/comments/dislike/{song_id}")
     public Comment dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws BadRequestException, SQLException {
         User user = validateUser(session);
         Comment comment = commentRepository.findById(id);

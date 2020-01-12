@@ -16,7 +16,7 @@ public class Playlist  {
     private long id;
     @Column(name = "title")
     private String title;
-    @Column (name = "description") //TODO what is this for?
+    @Column (name = "name") //TODO what is this for?
     private String description;
     @ManyToOne
     @JoinColumn(name = "creator_id")

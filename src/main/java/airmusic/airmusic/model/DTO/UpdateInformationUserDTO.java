@@ -15,9 +15,7 @@ public class UpdateInformationUserDTO {
     private String gender;
     private String birthDate;
 
-    public User toUser() {
-        User user = new User();
-        user.setGender(this.gender);
+    public User toUser(User user) {
         user.setEmail(this.email);
         user.setFirstName(this.firstName);
         user.setLastName(this.lastName);

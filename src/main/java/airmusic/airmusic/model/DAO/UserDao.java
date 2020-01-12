@@ -1,6 +1,7 @@
 package airmusic.airmusic.model.DAO;
 
 import airmusic.airmusic.exceptions.*;
+import airmusic.airmusic.model.POJO.Gender;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.SongRepository;
@@ -42,9 +43,14 @@ public class UserDao {
               PreparedStatement ps = connection.prepareStatement(FOLLOW_USERS_SQL)) {
             ps.setLong(1, follower.getId());
             ps.setLong(2, following.getId());
-            if (ps.execute()) {
+            boolean userIsFollowed =!ps.execute();
+            System.out.println(userIsFollowed);
+            if (userIsFollowed) {
                 throw new BadRequestException("User is already followed");
             }
+        }
+        catch (java.sql.SQLIntegrityConstraintViolationException e){
+            throw new BadRequestException("User already followed");
         }
     }
     public void unFollowUser(User user, User targetUser) throws SQLException, BadRequestException {
@@ -79,7 +85,15 @@ public class UserDao {
     }
 
 
-
-
-
+    public Gender setGender(String gender) throws SQLException, BadRequestException {
+        try(Connection connection = jdbcTemplate.getDataSource().getConnection();
+            PreparedStatement ps = connection.prepareStatement("SELECT id,name  FROM genders WHERE name =?"))   {
+            ps.setString(1,gender);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()){
+                return new Gender(rs.getLong(1), rs.getString(2));
+            }
+            throw new BadRequestException("Ivalid gender type");
+        }
+    }
 }
