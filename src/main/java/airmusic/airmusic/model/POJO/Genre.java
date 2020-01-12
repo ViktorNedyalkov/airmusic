@@ -13,7 +13,7 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @Entity
-@Table(name = "genres")
+@Table(name = "genre")
 public class Genre {
     @JsonIgnore
     @Id

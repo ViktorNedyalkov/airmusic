@@ -5,6 +5,7 @@ import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.CommentDao;
 import airmusic.airmusic.model.DTO.CommentDTO;
 import airmusic.airmusic.model.POJO.Comment;
+import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.CommentRepository;
 import airmusic.airmusic.model.repositories.SongRepository;
@@ -53,30 +54,35 @@ public class CommentController extends AbstractController {
 
     @SneakyThrows
     @PutMapping(value = "songs/{song_id}/comments/{comment_id}")
-    public void editComment(@PathVariable("song_id") long songId,
+    public Comment editComment(@PathVariable("song_id") long songId,
                             @PathVariable("comment_id") long commentId,
                             HttpSession session,
                             @RequestBody CommentDTO commentDTO) {
 
         User user = validateUser(session);
         checkIfSongExists(songId);
+        Comment oldComment = getCommentIfItExists(commentId);
 
         if (user.getId() != commentRepository.findById(commentId).getUser().getId()) {
             throw new NotLoggedUserException("You are not the owner of this comment");
         }
-        Comment oldComment = getCommentIfItExists(commentId);
+
+
         if (oldComment == null) {
             throw new NotFoundException("Comment not found");
         }
+
         if(commentDTO == null){
             throw new BadRequestException("Please fill out the json");
         }
         if (commentDTO.getText() == null) {
             throw new BadRequestException("Illegal data type passed");
         }
-        oldComment.setText(commentDTO.getText());
-        commentRepository.save(oldComment);
 
+        oldComment.setText(commentDTO.getText());
+
+        commentRepository.save(oldComment);
+        return oldComment;
     }
 
     @SneakyThrows
@@ -126,7 +132,8 @@ public class CommentController extends AbstractController {
         return comment;
     }
     private void checkIfSongExists(long songId) throws NotFoundException {
-        if (songRepository.findById(songId) == null) {
+        Song song = songRepository.findById(songId);
+        if (song == null) {
             throw new NotFoundException("Song not found");
         }
     }
