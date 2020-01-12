@@ -17,13 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +43,8 @@ Minimum eight in length .{8,} (with the anchors)
     private static final String DATE_REGEX = "([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))";
     private static final String LOGGED = "logged";
     private static final LocalDate MIN_DATE_REQUIRED_FOR_REGISTRATION = LocalDate.of(1900,01,01);
+    private static final String USER_ACTIVATION_PATH = "localhost:8080/users/activation/";
+    private static final String USER_ACTIVATION_SUBJECT = "Profile Activation ";
 
 
     @Autowired
@@ -77,8 +77,8 @@ Minimum eight in length .{8,} (with the anchors)
 
         userRepository.save(user);
         new MailSender(user.getEmail(),
-                "Profile Activation ",
-                "localhost:3306/users/activation/" +user.getId()).start();
+                USER_ACTIVATION_SUBJECT,
+                USER_ACTIVATION_PATH +user.getId()).start();
         return "Successfully registered! Check mail for activation link!";
     }
 
@@ -107,8 +107,8 @@ Minimum eight in length .{8,} (with the anchors)
         }
         if (!user.isActivated()){
             MailSender.sendMail(user.getEmail().trim(),
-                    "Activation mail",
-                    "localhost:3306/users/activation/"+user.getId());
+                    USER_ACTIVATION_SUBJECT,
+                    USER_ACTIVATION_PATH+user.getId());
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user);
