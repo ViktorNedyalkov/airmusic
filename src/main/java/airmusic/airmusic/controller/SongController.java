@@ -60,9 +60,10 @@ public class SongController extends  AbstractController{
     }
 
     @SneakyThrows
-    @GetMapping("/songs/search/byUploadDateAndNumberOfLikes")
-    public List<Song> searchByUploadDateAndNumberOfLikes(){
-        return songDao.getSongsByUploadDateAndNumberOfLikes();
+    @GetMapping("/songs/search/byNumberOfLikes")
+    public List<Song> searchByNumberOfLikes(){
+
+        return songDao.getSongsByNumberOfLikes();
     }
 
     @SneakyThrows

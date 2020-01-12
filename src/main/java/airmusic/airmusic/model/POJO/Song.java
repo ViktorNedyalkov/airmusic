@@ -28,4 +28,16 @@ public class Song {
     private Date uploadDate;//SQL DATE, maybe change later
     private String trackUrl;
 
+    @Override
+    public String toString() {
+        return "Song{" +
+                "id=" + id +
+                ", uploader=" + uploader +
+                ", description='" + description + '\'' +
+                ", genre=" + genre +
+                ", title='" + title + '\'' +
+                ", uploadDate=" + uploadDate +
+                ", trackUrl='" + trackUrl + '\'' +
+                '}';
+    }
 }
