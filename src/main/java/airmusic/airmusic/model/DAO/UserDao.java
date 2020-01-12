@@ -2,9 +2,7 @@ package airmusic.airmusic.model.DAO;
 
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.POJO.Gender;
-import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
-import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;

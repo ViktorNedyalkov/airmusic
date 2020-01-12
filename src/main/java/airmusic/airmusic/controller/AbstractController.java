@@ -18,10 +18,15 @@ public abstract class AbstractController {
 
 
 
-    @ResponseStatus(value = HttpStatus.UNAUTHORIZED,reason = "please login")
+    @ResponseStatus(value = HttpStatus.UNAUTHORIZED)
     @ExceptionHandler({NotLoggedUserException.class})
-    public void loggedExceptionHandler(){
-
+    public ErrorDTO loggedExceptionHandler(Exception e){
+        ErrorDTO errorDTO = new ErrorDTO(
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                e.getClass().getName());
+        return errorDTO;
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Size of file is too large")
@@ -33,9 +38,19 @@ public abstract class AbstractController {
     protected User validateUser(HttpSession session){
         User user = (User) session.getAttribute(USER_SESSION_LOGGED);
         if(user == null){
-            throw new NotLoggedUserException();
+            throw new NotLoggedUserException("Please log in");
         }
         return user;
+    }
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(NotFoundException.class)
+    public ErrorDTO handleNotFoundException(Exception e){
+        ErrorDTO errorDTO = new ErrorDTO(
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                e.getClass().getName());
+        return errorDTO;
     }
     //TODO optimization for BAD_REQUEST
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)

@@ -2,8 +2,6 @@ package airmusic.airmusic.model.DAO;
 
 import airmusic.airmusic.model.POJO.Playlist;
 import airmusic.airmusic.model.POJO.Song;
-import airmusic.airmusic.model.repositories.SongRepository;
-import airmusic.airmusic.model.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;

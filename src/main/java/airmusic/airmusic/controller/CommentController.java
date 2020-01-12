@@ -27,13 +27,18 @@ public class CommentController extends AbstractController {
     private CommentDao commentDao;
 
     @SneakyThrows
-    @PostMapping("comments/{song_id}")
+    @PostMapping("songs/{song_id}/comment")
     public Comment commentOnSong(@PathVariable(name = "song_id") long song_id,
                                  HttpSession session,
                                  @RequestBody CommentDTO commentDTO) {
         //comment with current logged user
         User user = validateUser(session);
-
+        if(commentDTO == null){
+            throw new BadRequestException("Please enter valid json");
+        }
+        if(commentDTO.getText() == null){
+            throw new BadRequestException("Please enter a valid json");
+        }
         if (songRepository.findById(song_id) == null) {
             throw new NotFoundException("Song not found");
         }
@@ -47,24 +52,27 @@ public class CommentController extends AbstractController {
     }
 
     @SneakyThrows
-    @PutMapping(value = "/{song_id}/comments/{comment_id}")
+    @PutMapping(value = "songs/{song_id}/comments/{comment_id}")
     public void editComment(@PathVariable("song_id") long songId,
                             @PathVariable("comment_id") long commentId,
                             HttpSession session,
                             @RequestBody CommentDTO commentDTO) {
-        //TODO MAJOR REFACTOR
+
         User user = validateUser(session);
         checkIfSongExists(songId);
 
-        if (user.getId() != commentRepository.findById(songId).getUser().getId()) {
-            throw new NotLoggedUserException();
+        if (user.getId() != commentRepository.findById(commentId).getUser().getId()) {
+            throw new NotLoggedUserException("You are not the owner of this comment");
         }
-        Comment oldComment = getCommentIfItExists(songId);
+        Comment oldComment = getCommentIfItExists(commentId);
         if (oldComment == null) {
             throw new NotFoundException("Comment not found");
         }
+        if(commentDTO == null){
+            throw new BadRequestException("Please fill out the json");
+        }
         if (commentDTO.getText() == null) {
-            throw new IllegalValuePassedException();
+            throw new BadRequestException("Illegal data type passed");
         }
         oldComment.setText(commentDTO.getText());
         commentRepository.save(oldComment);
@@ -72,11 +80,11 @@ public class CommentController extends AbstractController {
     }
 
     @SneakyThrows
-    @DeleteMapping("/{song_id}/comments/{comment_id}")
+    @DeleteMapping("songs/{song_id}/comments/{comment_id}")
     public void deleteComment(@PathVariable("song_id") long songId,
                               @PathVariable("comment_id") long commentId,
                               HttpSession session) {
-        //TODO MAJOR REFACTOR
+
         User user = validateUser(session);
         checkIfSongExists(songId);
         if (songRepository.findById(songId) == null) {
@@ -95,7 +103,7 @@ public class CommentController extends AbstractController {
         commentRepository.delete(comment);
     }
     @SneakyThrows
-    @PostMapping("/comments/like/{comment_id}")
+    @PostMapping("/comments/{comment_id}/like/")
     public Comment likeComment(@PathVariable("comment_id") long id,
                                HttpSession session){
         User user = validateUser(session);
@@ -106,8 +114,9 @@ public class CommentController extends AbstractController {
         commentDao.likeComment(user,comment);
         return comment;
     }
-    @DeleteMapping("/comments/dislike/{song_id}")
-    public Comment dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws BadRequestException, SQLException {
+
+    @DeleteMapping("/songs/{comment_id}/dislike/")
+    public Comment dislikeComment(HttpSession session, @PathVariable("comment_id") long id) throws BadRequestException, SQLException {
         User user = validateUser(session);
         Comment comment = commentRepository.findById(id);
         if (comment==null){
