@@ -44,7 +44,7 @@ public class PlaylistController extends AbstractController{
 
         return playlistRepository.save(playlist);
     }
-    @PostMapping("/playlists/track/")
+    @PostMapping("/playlists/track")
     public ResponsePlaylistDTO addTrackToList(HttpSession session, @RequestBody TrackToListDTO dto) throws NotLoggedUserException, BadRequestException, SQLException {
         User user = validateUser(session);
         Playlist playlist = getPlaylist(dto.getPlaylist_id(), user);
@@ -55,7 +55,7 @@ public class PlaylistController extends AbstractController{
 
 
     //get
-    @GetMapping("/users/playlists/myLists")
+    @GetMapping("/user/playlists")
     public List<Playlist> myLists(HttpSession session) {
         User user = validateUser(session);
         return playlistRepository.findAllByCreator_Id(user.getId());

@@ -2,6 +2,7 @@ package airmusic.airmusic.controller;
 
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
+import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
@@ -20,10 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.sql.Time;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -65,7 +64,8 @@ public class SongController extends  AbstractController{
 
 
         //fixme
-        return songRepository.findAllByLikes(2);
+        //return songRepository.findAllByLikes(2);
+        return null;
     }
     @SneakyThrows
     @GetMapping("/songs/{id}")
@@ -107,7 +107,7 @@ public class SongController extends  AbstractController{
         byte[] fileBytes = file.getBytes();
 
 
-        String songUrl = UPLOAD_PATH + file.getOriginalFilename() + new Time(System.currentTimeMillis());
+        String songUrl = UPLOAD_PATH + file.getOriginalFilename() + System.currentTimeMillis();
         Path path = Paths.get(songUrl);
         Files.write(path, fileBytes);
 
@@ -127,7 +127,7 @@ public class SongController extends  AbstractController{
 
     @PutMapping("song/{song_id}")
     public Song editSongDescription(@PathVariable("song_id") long song_id,
-                                    @RequestBody Map<String, String> bodyData,
+                                    @RequestBody SongEditDTO songEditDTO,
                                     HttpSession session) throws NotLoggedUserException, NotFoundException {
 
         //validate if user is logged in
@@ -135,17 +135,19 @@ public class SongController extends  AbstractController{
         if(songRepository.findById(song_id) == null){
             throw new NotFoundException("Song not found");
         }
-        if(bodyData.containsValue(null)){
-            throw new ForbiddenSongActionException();
+        if(songEditDTO == null){
+            throw new BadRequestException("Please enter a correct json");
+        }
+        if(songEditDTO.getDescription() == null){
+            throw new BadRequestException("Please pass a valid value");
         }
         Song song = songRepository.findById(song_id);
         if(user.getId() != song.getUploader().getId()){
-
-            throw new ForbiddenSongActionException();
+            throw new NotLoggedUserException("You are not the owner of this song");
         }
+
         //todo refactor
-        String newDescription = bodyData.get("description");
-        song.setDescription(newDescription);
+        song.setDescription(songEditDTO.getDescription());
         songRepository.save(song);
         return song;
     }
@@ -159,7 +161,7 @@ public class SongController extends  AbstractController{
         //is user logged in
         User user = validateUser(session);
         if(user == null){
-            throw new NotLoggedUserException();
+            throw new NotLoggedUserException("Please log in");
         }
 
         //does song exist
@@ -170,7 +172,7 @@ public class SongController extends  AbstractController{
         Song song = songRepository.findById(song_id);
         if(user.getId() != song.getUploader().getId()){
             //todo maybe change to another exception
-            throw new NotLoggedUserException();
+            throw new NotLoggedUserException("You are not the owner of this song");
         }
         //delete song
         //from file system
@@ -184,21 +186,24 @@ public class SongController extends  AbstractController{
     }
 
     @PostMapping("/songs/like/{song_id}")
-    public Song likeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException, BadRequestException {
+    public Song likeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
+            BadRequestException {
         User user = validateUser(session);
         Song song = songRepository.findById(id);
         if (song==null){
-            throw  new BadRequestException("Not such song found");
+            throw  new BadRequestException("No such song found");
         }
         songDao.likeSong(user, song);
         return song;
     }
     @DeleteMapping("/songs/dislike/{song_id}")
-    public Song dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException, SQLException, BadRequestException {
+    public Song dislikeSong(HttpSession session, @PathVariable("song_id") long id) throws NotLoggedUserException,
+            SQLException,
+            BadRequestException {
         User user = validateUser(session);
         Song song = songRepository.findById(id);
         if (song==null){
-            throw  new BadRequestException("Not such song found");
+            throw  new BadRequestException("No such song found");
         }
         songDao.dislikeSong(user,song);
         return song;

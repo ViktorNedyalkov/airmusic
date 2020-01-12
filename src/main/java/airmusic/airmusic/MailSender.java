@@ -1,9 +1,4 @@
-package airmusc.airmusic;
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+package airmusic.airmusic;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;

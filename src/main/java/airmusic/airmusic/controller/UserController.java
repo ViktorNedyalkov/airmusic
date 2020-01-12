@@ -3,7 +3,6 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.*;
-import airmusic.airmusic.model.POJO.Playlist;
 import airmusic.airmusic.model.POJO.User;
 import airmusic.airmusic.model.repositories.UserRepository;
 
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -73,7 +71,9 @@ Minimum eight in length .{8,} (with the anchors)
         validateDate(dto.getBirthDate());
         User user = dto.toUser();
         userRepository.save(user);
-        new airmusc.airmusic.MailSender(user.getEmail(),"Profile Activation ", "localhost:3306/users/activation/" +user.getId()).start();
+        new airmusc.airmusic.MailSender(user.getEmail(),
+                "Profile Activation ",
+                "localhost:3306/users/activation/" +user.getId()).start();
         return "Successfully registered! Check mail for activation link!";
     }
     @SneakyThrows
@@ -91,7 +91,8 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     @PostMapping("/login")//ok
-    public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session) throws BadRequestException {
+    public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session)
+            throws BadRequestException {
         String email = dto.getEmail();
         String pass = dto.getPassword();
         User user = userRepository.findByEmail(email);
@@ -99,7 +100,9 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!user.isActivated()){
-            airmusc.airmusic.MailSender.sendMail(user.getEmail().trim(),"Activation mail","localhost:3306/users/activation/"+user.getId());
+            airmusc.airmusic.MailSender.sendMail(user.getEmail().trim(),
+                    "Activation mail",
+                    "localhost:3306/users/activation/"+user.getId());
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user);
@@ -126,7 +129,9 @@ Minimum eight in length .{8,} (with the anchors)
         return user;
     }
     @PostMapping("/users/follow/{id}")
-    public User followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
+    public User followUser(HttpSession session,
+                           @PathVariable("id") long id)
+            throws  BadRequestException {
         User user = validateUser(session);
         Optional<User> followedUser = userRepository.findById(id);
         if (!followedUser.isPresent()){
@@ -137,7 +142,10 @@ Minimum eight in length .{8,} (with the anchors)
     }
     //put
     @PutMapping("/users/pi")
-    public User updateUser(HttpSession session, @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
+    public User updateUser(HttpSession session,
+                           @RequestBody UpdateInformationUserDTO updatedUser)
+            throws SQLException,
+            BadRequestException {
         User user = validateUser(session);
         if (userDao.doesExist(updatedUser.getEmail())&&
             !user.getEmail().equals(updatedUser.getEmail())) {

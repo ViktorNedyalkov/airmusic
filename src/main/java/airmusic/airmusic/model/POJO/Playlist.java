@@ -19,6 +19,6 @@ public class Playlist  {
     @Column (name = "description") //TODO what is this for?
     private String description;
     @ManyToOne
-    @JoinColumn(name = "creator_id")
+    @JoinColumn(name = "user")
     private User creator;
 }
