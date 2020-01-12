@@ -119,7 +119,7 @@ public class SongController extends  AbstractController{
     //post mappings
     @SneakyThrows
     @PostMapping("/songs")
-    public Song addSong(@RequestParam String description,
+    public String addSong(@RequestParam String description,
                         @RequestParam String title,
                         @RequestParam String genre_id,
                         @RequestParam(value = "song")MultipartFile file,
@@ -139,7 +139,7 @@ public class SongController extends  AbstractController{
 
 
 
-        return null;
+        return "Your song has been uploaded successfully";
     }
 
     //put mappings
@@ -184,11 +184,12 @@ public class SongController extends  AbstractController{
         }
 
         //does song exist
-        if(songRepository.findById(song_id) == null){
+        Song song = songRepository.findById(song_id);
+        if(song == null){
             throw new NotFoundException("Song not found");
         }
         //is user the same as uploader
-        Song song = songRepository.findById(song_id);
+
         if(user.getId() != song.getUploader().getId()){
             //todo maybe change to another exception
             throw new NotLoggedUserException("You are not the owner of this song");
@@ -196,7 +197,7 @@ public class SongController extends  AbstractController{
         //delete song
         //from file system
         File file = new File(song.getTrackUrl());
-        System.out.println(file.exists());
+        file.delete();
         //delete from amazon
         amazonClient.deleteFileFromS3Bucket(song.getAmazonUrl());
         //from database
