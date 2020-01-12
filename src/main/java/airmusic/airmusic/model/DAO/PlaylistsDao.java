@@ -1,5 +1,6 @@
 package airmusic.airmusic.model.DAO;
 
+import airmusic.airmusic.exceptions.BadRequestException;
 import airmusic.airmusic.model.POJO.Playlist;
 import airmusic.airmusic.model.POJO.Song;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.sql.SQLException;
 
 @Component
 public class PlaylistsDao {
+    private static final int IS_ANY_ROWS_EFFECTED = 1;
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
@@ -47,7 +49,9 @@ public class PlaylistsDao {
             PreparedStatement ps = connection.prepareStatement(DELETE_FROM_PLAYLIST_SQL)) {
             ps.setLong(1,playlist.getId());
             ps.setLong(2,song.getId());
-            ps.execute();
+            if (ps.executeUpdate()< IS_ANY_ROWS_EFFECTED){
+                throw new BadRequestException("No such song in this list");
+            }
             return playlist;
         }
     }

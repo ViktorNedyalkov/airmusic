@@ -17,13 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +43,8 @@ Minimum eight in length .{8,} (with the anchors)
     private static final String DATE_REGEX = "([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))";
     private static final String LOGGED = "logged";
     private static final LocalDate MIN_DATE_REQUIRED_FOR_REGISTRATION = LocalDate.of(1900,01,01);
+    private static final String USER_ACTIVATION_PATH = "localhost:8080/users/activation/";
+    private static final String USER_ACTIVATION_SUBJECT = "Profile Activation ";
 
 
     @Autowired
@@ -68,23 +68,23 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getFirstName().isEmpty()
                 || dto.getLastName().isEmpty()
                 || dto.getGender().isEmpty()
-                || dto.getBirthDate().isEmpty()) {
+                ) {
             throw new BadRequestException("All fills are required");
         }
         User user = dto.toUser();
         validateGender(dto.getGender(),user);
-        validateDate(dto.getBirthDate());
+        validateDate(dto.getBirthDate().toString());
 
         userRepository.save(user);
         new MailSender(user.getEmail(),
-                "Profile Activation ",
-                "localhost:3306/users/activation/" +user.getId()).start();
+                USER_ACTIVATION_SUBJECT,
+                USER_ACTIVATION_PATH +user.getId()).start();
         return "Successfully registered! Check mail for activation link!";
     }
 
     @SneakyThrows
     @PostMapping("/users/activation/{id}")
-    public ResponseUserDTO activateUser(@PathVariable("id") long userId){
+    public ResponseUserDTO activateUser(HttpSession session, @PathVariable("id") long userId){
        Optional<User> user = userRepository.findById(userId);
        if (!user.isPresent()){
            throw new BadRequestException("No such user");
@@ -93,7 +93,8 @@ Minimum eight in length .{8,} (with the anchors)
            throw new BadRequestException("user already activated");
        }
        user.get().setActivated(true);
-       return new ResponseUserDTO(userRepository.save( user.get()));
+       session.setAttribute(LOGGED, user.get());
+       return new ResponseUserDTO(userRepository.save(user.get()));
     }
 
     @PostMapping("/login")//ok
@@ -107,8 +108,8 @@ Minimum eight in length .{8,} (with the anchors)
         }
         if (!user.isActivated()){
             MailSender.sendMail(user.getEmail().trim(),
-                    "Activation mail",
-                    "localhost:3306/users/activation/"+user.getId());
+                    USER_ACTIVATION_SUBJECT,
+                    USER_ACTIVATION_PATH+user.getId());
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user);
@@ -137,7 +138,9 @@ Minimum eight in length .{8,} (with the anchors)
         Files.write(path, fileBytes);
         user.setAvatar(avatarUrl);
         userRepository.save(user);
-        Files.deleteIfExists(Paths.get(oldAvatarUrl));
+        if (oldAvatarUrl!=null) {
+            Files.deleteIfExists(Paths.get(oldAvatarUrl));
+        }
         return new ResponseUserDTO(user);
     }
 
@@ -164,7 +167,7 @@ Minimum eight in length .{8,} (with the anchors)
         }
         updatedUser.toUser(user);
         validateGender(updatedUser.getGender(),user);
-        validateDate(updatedUser.getBirthDate());
+        validateDate(updatedUser.getBirthDate().toString());
         userRepository.save(user);
         return new ResponseUserDTO(user);
     }

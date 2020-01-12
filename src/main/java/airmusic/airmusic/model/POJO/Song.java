@@ -11,13 +11,13 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "tracks", schema = "mydb")
+@Table(name = "tracks")
 public class Song {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
     private long id;
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "uploader_id")
     private User uploader;
     private String description;

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9393b3c6-aa66-46fa-928e-da49c4f6d19a",
+		"_postman_id": "e37edffa-9d5b-4337-b881-618c682ced2f",
 		"name": "Final_project",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -19,7 +19,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"email\" : \"vasko11@abv.bg\",\n\t\"password\" : \"AB-cdEF91\"\n\n}",
+					"raw": "{\n\t\"email\" : \"back00@abv.bg\",\n\t\"password\" : \"AB-cdEF91\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -40,7 +40,7 @@
 			"response": []
 		},
 		{
-			"name": "Search User by firstName or Last Name",
+			"name": "Search song by title",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -56,7 +56,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"searchingFor\" : \"as \",\n\t\"password\" : \"vasko\"\n\n}",
+					"raw": "{\n\t\"title\" : \"i\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -64,14 +64,14 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/users/find",
+					"raw": "localhost:8080/songs/search",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"users",
-						"find"
+						"songs",
+						"search"
 					]
 				}
 			},
@@ -91,7 +91,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"email\" : \"back00@abv.bg\",\n\t\"password\" : \"AB-cdEF91\",\n\t\"confirmPassword\" : \"AB-cdEF91\",\n\t\"firstName\" : \"vasil\",\n\t\"lastName\" : \"vasilev\",\n\t\"gender\" : 1,\n\t\"birthDate\" : \"1991-01-01\"\n}",
+					"raw": "{\n\t\"email\" : \"kimpar3@abv.bg\",\n\t\"password\" : \"AB-cdEF91\",\n\t\"confirmPassword\" : \"AB-cdEF91\",\n\t\"firstName\" : \"gosho\",\n\t\"lastName\" : \"vasilev\",\n\t\"gender\" : \"male\",\n\t\"birthDate\" : \"1991-01-01\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -126,7 +126,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"email\" : \"vasko11@abv.bg\",\n\t\"firstName\" : \"vasil\",\n\t\"lastName\" : \"vasi1leav\",\n\t\"gender\" : 1,\n\t\"birthDate\" : \"1993-01-01\"\n}",
+					"raw": "{\n\t\"email\" : \"back00@abv.bg\",\n\t\"firstName\" : \"vasil\",\n\t\"lastName\" : \"vasi1leav\",\n\t\"gender\" : \"female\",\n\t\"birthDate\" : \"1993-01-01\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -206,7 +206,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/users/follow/18",
+					"raw": "localhost:8080/users/follow/105",
 					"host": [
 						"localhost"
 					],
@@ -214,7 +214,7 @@
 					"path": [
 						"users",
 						"follow",
-						"18"
+						"105"
 					]
 				},
 				"description": "backUp register"
@@ -243,7 +243,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/users/unfollow/18",
+					"raw": "localhost:8080/users/unfollow/105",
 					"host": [
 						"localhost"
 					],
@@ -251,7 +251,7 @@
 					"path": [
 						"users",
 						"unfollow",
-						"18"
+						"105"
 					]
 				},
 				"description": "backUp register"
@@ -394,7 +394,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/songs/like/1",
+					"raw": "localhost:8080/songs/like/4",
 					"host": [
 						"localhost"
 					],
@@ -402,7 +402,7 @@
 					"path": [
 						"songs",
 						"like",
-						"1"
+						"4"
 					]
 				}
 			},
@@ -422,7 +422,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"playlist_id\": 43,\n\t\"song_id\": 4\n}",
+					"raw": "{\n\t\"playlist_id\": 99,\n\t\"song_id\": 4\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -430,16 +430,15 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/users/playlists/track/add",
+					"raw": "localhost:8080/playlists/track/",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"users",
 						"playlists",
 						"track",
-						"add"
+						""
 					]
 				}
 			},
@@ -459,7 +458,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"playlist_id\": 43,\n\t\"song_id\": 4\n}",
+					"raw": "{\n\t\"playlist_id\": 99,\n\t\"song_id\": 4\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -467,13 +466,14 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/playlists",
+					"raw": "localhost:8080/playlists/track",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"playlists"
+						"playlists",
+						"track"
 					]
 				}
 			},
@@ -493,7 +493,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"title\": \"SuperCoolList\",\n\t\"name\" : \"what is this for\"\n}",
+					"raw": "{\n\t\"title\": \"SuperCoolList\",\n\t\"description\" : \"\\t\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -535,7 +535,7 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/songs/dislike/1",
+					"raw": "localhost:8080/songs/dislike/4",
 					"host": [
 						"localhost"
 					],
@@ -543,7 +543,7 @@
 					"path": [
 						"songs",
 						"dislike",
-						"1"
+						"4"
 					]
 				}
 			},
@@ -612,15 +612,15 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/users/playlists/myLists",
+					"raw": "localhost:8080/user/playlists/",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"users",
+						"user",
 						"playlists",
-						"myLists"
+						""
 					]
 				}
 			},
@@ -628,18 +628,37 @@
 		},
 		{
 			"name": "Search user by name",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"searchingFor\": \"gosho\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "localhost:8080/search/user",
+					"raw": "localhost:8080/users/find",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"search",
-						"user"
+						"users",
+						"find"
 					]
 				}
 			},
@@ -656,7 +675,7 @@
 						{
 							"key": "avatar",
 							"type": "file",
-							"src": "/C:/Users/back0/OneDrive/Desktop/pngFile.png"
+							"src": "/D:/Users/back0/JavaProject/airmusic/eer- database.png"
 						}
 					]
 				},
@@ -690,14 +709,15 @@
 					]
 				},
 				"url": {
-					"raw": "localhost:8080/users/picture",
+					"raw": "localhost:8080/users/activation/107",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
 						"users",
-						"picture"
+						"activation",
+						"107"
 					]
 				}
 			},

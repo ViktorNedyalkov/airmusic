@@ -29,7 +29,6 @@ public class Uploader extends Thread {
                     User uploader, SongRepository songRepository) {
 
         this.multipartFile = multipartFile;
-
         this.amazonClient = amazonClient;
         this.description = description;
         this.genre_id = genre_id;
