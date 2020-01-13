@@ -55,6 +55,15 @@ Minimum eight in length .{8,} (with the anchors)
     @SneakyThrows
     @PostMapping("/register")
     public String registerUser(@RequestBody RegisterUserDTO dto) {
+        if (dto.getEmail() == null
+                || dto.getPassword()==null
+                || dto.getConfirmPassword()==null
+                || dto.getFirstName()==null
+                || dto.getLastName()==null
+                || dto.getGender()==null
+        ) {
+            throw new BadRequestException("All fills are required");
+        }
         isPasswordCorrect(dto.getPassword(),dto.getConfirmPassword());
         if (!dto.getEmail().trim().matches(EMAIL_REGEX)) {
            throw new BadRequestException("Not a valid e-mail");
@@ -62,6 +71,7 @@ Minimum eight in length .{8,} (with the anchors)
         if (userRepository.existsByEmail(dto.getEmail())){
             throw new BadRequestException("User already exists with this e-mail");
         }
+
         if (dto.getEmail().isEmpty()
                 || dto.getPassword().isEmpty()
                 || dto.getConfirmPassword().isEmpty()

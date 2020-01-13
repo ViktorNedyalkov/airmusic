@@ -4,6 +4,7 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.CommentDao;
 import airmusic.airmusic.model.DTO.CommentDTO;
+import airmusic.airmusic.model.DTO.ResponseCommentDTO;
 import airmusic.airmusic.model.POJO.Comment;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.User;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 public class CommentController extends AbstractController {
@@ -138,6 +140,14 @@ public class CommentController extends AbstractController {
         }
     }
 
+    @GetMapping("/songs/{song_id}/comments")
+    public List<ResponseCommentDTO> getCommentsOfSong(@PathVariable(value = "song_id") long songId){
+        if(songRepository.findById(songId) == null){
+            throw new NotFoundException("Song not found");
+        }
+
+        return ResponseCommentDTO.responseComments(commentRepository.findAllByTrack_Id(songId));
+    }
     @SneakyThrows
     private Comment getCommentIfItExists(long commentId) {
         Comment comment = commentRepository.findById(commentId);

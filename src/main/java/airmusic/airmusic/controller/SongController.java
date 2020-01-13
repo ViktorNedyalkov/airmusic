@@ -7,6 +7,7 @@ import airmusic.airmusic.model.DTO.ResponseSongDTO;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
 import airmusic.airmusic.model.DTO.SongWithLikesDTO;
+import airmusic.airmusic.model.POJO.Comment;
 import airmusic.airmusic.model.POJO.Song;
 import airmusic.airmusic.model.POJO.Uploader;
 import airmusic.airmusic.model.POJO.User;
@@ -108,10 +109,11 @@ public class SongController extends  AbstractController{
         return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(userId));
     }
 
+
     //post mappings
     @SneakyThrows
     @PostMapping("/songs")
-    public Song addSong(@RequestParam String description,
+    public String addSong(@RequestParam String description,
                         @RequestParam String title,
                         @RequestParam String genre_id,
                         @RequestParam(value = "song")MultipartFile file,
@@ -126,7 +128,7 @@ public class SongController extends  AbstractController{
         }
         Thread uploadToAmazon = new Uploader(file, amazonClient, description, genre_id, title, uploader, songRepository);
         uploadToAmazon.start();
-        return null;
+        return "Your song has started uploading";
     }
 
     //put mappings
