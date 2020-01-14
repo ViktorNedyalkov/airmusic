@@ -143,8 +143,8 @@ Minimum eight in length .{8,} (with the anchors)
         }
         byte[] fileBytes = file.getBytes();
         String oldAvatarUrl = user.getAvatar();
-        String avatarUrl = UPLOAD_PATH + user.getId() + System.currentTimeMillis();
-        Path path = Paths.get(avatarUrl);
+        String avatarUrl =  "AvatarOF" + user.getId() + System.currentTimeMillis();
+        Path path = Paths.get(UPLOAD_PATH +avatarUrl);
         Files.write(path, fileBytes);
         user.setAvatar(avatarUrl);
         userRepository.save(user);
@@ -222,13 +222,11 @@ Minimum eight in length .{8,} (with the anchors)
         return ResponseUserDTO.usersToRespond(userDao.getFollowing(user));
     }
 
+    @SneakyThrows
     @GetMapping("users/find")
     public List<ResponseUserDTO> findUser(@RequestBody SearchDTO dto){//finds users By firstName or LastName
-        List<User> searchResult = userRepository.findAllByFirstNameContaining(dto.getSearchingFor().trim());
-        List<User> lastNameResult = userRepository.findAllByLastNameContaining(dto.getSearchingFor().trim());
-        searchResult.removeAll(lastNameResult);
-        searchResult.addAll(lastNameResult);
-        return ResponseUserDTO.usersToRespond(searchResult);
+        List<User> result = userDao.searchUser(dto);
+        return ResponseUserDTO.usersToRespond(result);
     }
 
 

@@ -1,6 +1,7 @@
 package airmusic.airmusic.model.DTO;
 
 import airmusic.airmusic.model.POJO.Song;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +19,7 @@ public class ResponseSongDTO {
     private ResponseUserDTO uploader;
     private String description;
     private String genre;
+    @JsonFormat(pattern = "yyyy-mm-dd")
     private Date uploadDate;
     private String title;
     private String trackUrl;

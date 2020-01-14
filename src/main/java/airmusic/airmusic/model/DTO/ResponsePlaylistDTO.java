@@ -23,19 +23,19 @@ public class ResponsePlaylistDTO {
     private long id;
     @NotNull
     private String title;
-    private User creator;
-    private List<Song> songs;
+    private ResponseUserDTO creator;
+    private List<ResponseSongDTO> songs;
 
 
 
     public ResponsePlaylistDTO(Playlist playlist) {
         this.setId(playlist.getId());
         this.setTitle(playlist.getTitle());
-        this.setCreator(playlist.getCreator());
+        this.setCreator(new ResponseUserDTO(playlist.getCreator()));
     }
     public ResponsePlaylistDTO(Playlist playlist, List<Song> songs) {
         this(playlist);
-        this.setSongs(songs);
+        this.setSongs(ResponseSongDTO.respondSongs(songs));
     }
     public static List<ResponsePlaylistDTO> responsePlaylists(List<Playlist> playlists){
         List<ResponsePlaylistDTO> response = new ArrayList<>();

@@ -1,5 +1,6 @@
 package airmusic.airmusic.model.POJO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +26,7 @@ public class Song {
     @JoinColumn(name = "genre_id")
     private Genre genre;
     private String title;
+    @JsonFormat(pattern = "yyyy-mm-dd")
     private Date uploadDate;//SQL DATE, maybe change later
     private String trackUrl;
     private String amazonUrl;

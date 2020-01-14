@@ -33,15 +33,6 @@ public class User {
     private boolean activated;
 
 
-
-    public User(long id, String email, String firstName, String lastName, LocalDate birthDate) {
-        this.id = id;
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-    }
-
     public void setPassword(String password){
         this.password = BCrypt.hashpw(password,BCrypt.gensalt());
     }

@@ -23,7 +23,7 @@ public abstract class AbstractController {
     public ErrorDTO loggedExceptionHandler(Exception e){
         ErrorDTO errorDTO = new ErrorDTO(
                 e.getMessage(),
-                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.UNAUTHORIZED.value(),
                 LocalDateTime.now(),
                 e.getClass().getName());
         return errorDTO;
