@@ -16,8 +16,16 @@ public abstract class AbstractController {
 
     public static final String USER_SESSION_LOGGED = "logged";
 
-
-
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({IllegalValuePassedException.class})
+    public ErrorDTO handleIllegalValue(Exception e){
+        ErrorDTO errorDTO = new ErrorDTO(
+                e.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                LocalDateTime.now(),
+                e.getClass().getName());
+        return errorDTO;
+    }
     @ResponseStatus(value = HttpStatus.UNAUTHORIZED)
     @ExceptionHandler({NotLoggedUserException.class})
     public ErrorDTO loggedExceptionHandler(Exception e){
@@ -34,7 +42,7 @@ public abstract class AbstractController {
     public ErrorDTO amazonServiceException(Exception e){
         ErrorDTO errorDTO = new ErrorDTO(
                 e.getMessage(),
-                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
                 LocalDateTime.now(),
                 e.getClass().getName());
         return errorDTO;

@@ -21,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
@@ -114,17 +116,18 @@ public class SongController extends  AbstractController{
     @SneakyThrows
     @PostMapping("/songs")
     public String addSong(@RequestParam String description,
-                        @RequestParam String title,
-                        @RequestParam String genre_id,
-                        @RequestParam(value = "song")MultipartFile file,
+                          @RequestParam String title,
+                          @RequestParam String genre_id,
+                          @RequestParam(value = "song")MultipartFile file,
                         HttpSession session) {
         System.out.println(genre_id);
         User uploader = validateUser(session);
+        validateAddingOfSongParameters(description, title, genre_id);
         if (file == null) {
-            throw new IllegalValuePassedException("Please upload a file");
+            throw new BadRequestException("Please upload a file");
         }
         if (file.getContentType() == null || !file.getContentType().equalsIgnoreCase("audio/mpeg")) {
-            throw new IllegalValuePassedException("Please upload an audio file");
+            throw new BadRequestException("Please upload an audio file");
         }
         Thread uploadToAmazon = new Uploader(file, amazonClient, description, genre_id, title, uploader, songRepository);
         uploadToAmazon.start();
@@ -154,7 +157,7 @@ public class SongController extends  AbstractController{
             throw new NotLoggedUserException("You are not the owner of this song");
         }
 
-        //todo refactor
+
         song.setDescription(songEditDTO.getDescription());
         songRepository.save(song);
         return new ResponseSongDTO(song);
@@ -185,12 +188,12 @@ public class SongController extends  AbstractController{
         //delete song
         //from file system
         File file = new File(song.getTrackUrl());
-        System.out.println(file.exists());
+        file.delete();
         //delete from amazon
         amazonClient.deleteFileFromS3Bucket(song.getAmazonUrl());
         //from database
         songRepository.delete(song);
-        //don't know if i should return anything
+
         return song;
     }
 
@@ -235,6 +238,18 @@ public class SongController extends  AbstractController{
     @GetMapping("/songs/{uploader_id}/")
     public List<ResponseSongDTO> getUploaderSong(@PathVariable("uploader_id") long id){
         return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(id));
+    }
+
+    public void validateAddingOfSongParameters(String description, String title, String genre_id){
+        if(description == null || description.isBlank()){
+            throw new BadRequestException("You have to add a description");
+        }
+        if(title == null || title.isBlank()){
+            throw new BadRequestException("You have to add a title");
+        }
+        if(genre_id == null || genre_id.isBlank()){
+            throw new BadRequestException("You have to add a genre");
+        }
     }
 }
 
