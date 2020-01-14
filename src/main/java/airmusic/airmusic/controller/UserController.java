@@ -27,7 +27,7 @@ import java.util.Optional;
 
 
 @RestController
-public class UserController extends AbstractController{
+public class UserController extends AbstractController {
     private static final String PASSWORD_REGEX = "^(?=.*[0-9])(?=.*?[#?!@$%^&*-])(?=.*[a-zA-Z]).{8,}$";
     ;
     /*
@@ -42,9 +42,12 @@ Minimum eight in length .{8,} (with the anchors)
     private static final String EMAIL_REGEX = "^[\\w!#$%&'*+/=?`{|}~^-]+(?:\\.[\\w!#$%&'*+/=?`{|}~^-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,6}$";
     private static final String DATE_REGEX = "([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))";
     private static final String LOGGED = "logged";
-    private static final LocalDate MIN_DATE_REQUIRED_FOR_REGISTRATION = LocalDate.of(1900,01,01);
+    private static final LocalDate MIN_DATE_REQUIRED_FOR_REGISTRATION = LocalDate.of(1900, 01, 01);
     private static final String USER_ACTIVATION_PATH = "localhost:8080/users/activation/";
     private static final String USER_ACTIVATION_SUBJECT = "Profile Activation ";
+    private static final String WRONG_PASSWORD_MAIL_SUBJECT = "ATTEMPT TO ENTER IN YOUR ACCOUNT";
+    private static final String WRONG_PASSWORD_EMAIL_MSG = "Your account has been stopped for UNAUTHORIZED attempt to login " +
+            "Follow the link to reactivate your account ";
 
 
     @Autowired
@@ -56,19 +59,19 @@ Minimum eight in length .{8,} (with the anchors)
     @PostMapping("/register")
     public String registerUser(@RequestBody RegisterUserDTO dto) {
         if (dto.getEmail() == null
-                || dto.getPassword()==null
-                || dto.getConfirmPassword()==null
-                || dto.getFirstName()==null
-                || dto.getLastName()==null
-                || dto.getGender()==null
+                || dto.getPassword() == null
+                || dto.getConfirmPassword() == null
+                || dto.getFirstName() == null
+                || dto.getLastName() == null
+                || dto.getGender() == null
         ) {
             throw new BadRequestException("All fills are required");
         }
-        isPasswordCorrect(dto.getPassword(),dto.getConfirmPassword());
+        isPasswordCorrect(dto.getPassword(), dto.getConfirmPassword());
         if (!dto.getEmail().trim().matches(EMAIL_REGEX)) {
-           throw new BadRequestException("Not a valid e-mail");
+            throw new BadRequestException("Not a valid e-mail");
         }
-        if (userRepository.existsByEmail(dto.getEmail())){
+        if (userRepository.existsByEmail(dto.getEmail())) {
             throw new BadRequestException("User already exists with this e-mail");
         }
 
@@ -78,33 +81,44 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getFirstName().isEmpty()
                 || dto.getLastName().isEmpty()
                 || dto.getGender().isEmpty()
-                ) {
+        ) {
             throw new BadRequestException("All fills are required");
         }
         User user = dto.toUser();
-        validateGender(dto.getGender(),user);
+        validateGender(dto.getGender(), user);
         validateDate(dto.getBirthDate().toString());
 
         userRepository.save(user);
         new MailSender(user.getEmail(),
                 USER_ACTIVATION_SUBJECT,
-                USER_ACTIVATION_PATH +user.getId()).start();
+                USER_ACTIVATION_PATH +
+                        user.getEmail() +
+                        "/" + activationCode(user.getId())).start();
         return "Successfully registered! Check mail for activation link!";
     }
 
+    private String activationCode(long id) {
+        String code = BCrypt.hashpw(String.valueOf(id), BCrypt.gensalt());
+        code.replace('/', '-');
+        return code;
+    }
+
     @SneakyThrows
-    @PostMapping("/users/activation/{id}")
-    public ResponseUserDTO activateUser(HttpSession session, @PathVariable("id") long userId){
-       Optional<User> user = userRepository.findById(userId);
-       if (!user.isPresent()){
-           throw new BadRequestException("No such user");
-       }
-       if(user.get().isActivated()){
-           throw new BadRequestException("user already activated");
-       }
-       user.get().setActivated(true);
-       session.setAttribute(LOGGED, user.get());
-       return new ResponseUserDTO(userRepository.save(user.get()));
+    @PostMapping("/users/activation/{userEmail}/{activationCode}")
+    public ResponseUserDTO activateUser(HttpSession session,
+                                        @PathVariable("activationCode") String code,
+                                        @PathVariable("userEmail") String email) {
+        String activationCode = code.replace('-', '/');
+        Optional<User> user = userRepository.findByEmail(email);
+        if (!user.isPresent() || BCrypt.checkpw(String.valueOf(user.get().getId()), activationCode)) {
+            throw new BadRequestException("No such user");
+        }
+        if (user.get().isActivated()) {
+            throw new BadRequestException("user already activated");
+        }
+        user.get().setActivated(true);
+        session.setAttribute(LOGGED, user.get());
+        return new ResponseUserDTO(userRepository.save(user.get()));
     }
 
     @PostMapping("/login")//ok
@@ -112,58 +126,72 @@ Minimum eight in length .{8,} (with the anchors)
             throws BadRequestException {
         String email = dto.getEmail();
         String pass = dto.getPassword();
-        User user = userRepository.findByEmail(email);
-        if (user == null||!BCrypt.checkpw(pass,user.getPassword())) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
             throw new BadRequestException("Wrong e-mail or password");
         }
-        if (!user.isActivated()){
-            MailSender.sendMail(user.getEmail().trim(),
-                    USER_ACTIVATION_SUBJECT,
-                    USER_ACTIVATION_PATH+user.getId());
+        if (!BCrypt.checkpw(pass, user.get().getPassword())) {
+//            new MailSender(user.get().getEmail(), WRONG_PASSWORD_MAIL_SUBJECT,
+//                    WRONG_PASSWORD_EMAIL_MSG +
+//                            USER_ACTIVATION_PATH +
+//                            user.get().getEmail() +
+//                            "/" + activationCode(user.get().getId())).start();
+//            user.get().setActivated(false);
+//            userRepository.save(user.get());
+            throw new BadRequestException("Wrong e-mail or password");
+        }
+        if (!user.get().isActivated()) {
+//            new MailSender(user.get().getEmail(),
+//                    USER_ACTIVATION_SUBJECT,
+//                    USER_ACTIVATION_PATH +
+//                            user.get().getEmail() +
+//                            "/" +activationCode(user.get().getId())).start();
             throw new BadRequestException("Check your email and activate your profile");
         }
-        session.setAttribute(LOGGED, user);
-        return new ResponseUserDTO(user);
+        session.setAttribute(LOGGED, user.get());
+        return new ResponseUserDTO(user.get());
     }
+
     @PostMapping("/logout")//ok
-    public String logout(HttpSession session){
+    public String logout(HttpSession session) {
         session.invalidate();
         return "Logged out!";
     }
+
     @SneakyThrows
     @PostMapping("/users/picture")
     public ResponseUserDTO addPicture(@RequestParam(value = "avatar") MultipartFile file,
-                           HttpSession session) {
+                                      HttpSession session) {
         User user = validateUser(session);
-        if(file == null){
+        if (file == null) {
             throw new IllegalValuePassedException("Please upload a file");
         }
-        if(!file.getContentType().equalsIgnoreCase("image/png")){
+        if (!file.getContentType().equalsIgnoreCase("image/png")) {
             throw new IllegalValuePassedException("Please upload a png file");
         }
         byte[] fileBytes = file.getBytes();
         String oldAvatarUrl = user.getAvatar();
-        String avatarUrl =  "AvatarOF" + user.getId() + System.currentTimeMillis();
-        Path path = Paths.get(UPLOAD_PATH +avatarUrl);
+        String avatarUrl = "Avatar" + user.getId() + System.currentTimeMillis();
+        Path path = Paths.get(UPLOAD_PATH + avatarUrl);
         Files.write(path, fileBytes);
         user.setAvatar(avatarUrl);
         userRepository.save(user);
-        if (oldAvatarUrl!=null) {
-            Files.deleteIfExists(Paths.get(oldAvatarUrl));
-        }
+        System.out.println(UPLOAD_PATH + oldAvatarUrl);
+        Files.deleteIfExists(Paths.get(UPLOAD_PATH + oldAvatarUrl));
         return new ResponseUserDTO(user);
     }
 
     @PostMapping("/users/follow/{id}")
-    public ResponseUserDTO followUser(HttpSession session, @PathVariable("id") long id) throws  BadRequestException {
+    public ResponseUserDTO followUser(HttpSession session, @PathVariable("id") long id) throws BadRequestException {
         User user = validateUser(session);
         Optional<User> followedUser = userRepository.findById(id);
-        if (!followedUser.isPresent()){
+        if (!followedUser.isPresent()) {
             throw new BadRequestException("No such user");
         }
         userDao.followUser(user, followedUser.get());
         return new ResponseUserDTO(user);
     }
+
     //put
     @PutMapping("/users/pi")
 
@@ -171,12 +199,12 @@ Minimum eight in length .{8,} (with the anchors)
                                       @RequestBody UpdateInformationUserDTO updatedUser) throws SQLException, BadRequestException {
 
         User user = validateUser(session);
-        if (userDao.doesExist(updatedUser.getEmail())&&
-            !user.getEmail().equals(updatedUser.getEmail())) {
+        if (userDao.doesExist(updatedUser.getEmail()) &&
+                !user.getEmail().equals(updatedUser.getEmail())) {
             throw new BadRequestException("User already exists with this e-mail");
         }
         updatedUser.toUser(user);
-        validateGender(updatedUser.getGender(),user);
+        validateGender(updatedUser.getGender(), user);
         validateDate(updatedUser.getBirthDate().toString());
         userRepository.save(user);
         return new ResponseUserDTO(user);
@@ -185,12 +213,11 @@ Minimum eight in length .{8,} (with the anchors)
     @PutMapping("users/pw")
     public ResponseUserDTO changePassword(HttpSession session, @RequestBody ChangePasswordUserDTO dto) throws BadRequestException {
         User user = validateUser(session);
-        if (isPasswordCorrect(dto.getNewPassword(),dto.getConfirmNewPassword())&&
-            BCrypt.checkpw(dto.getOldPassword(),user.getPassword())){
+        if (isPasswordCorrect(dto.getNewPassword(), dto.getConfirmNewPassword()) &&
+                BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
             user.setPassword(dto.getNewPassword());
             return new ResponseUserDTO(user);
-        }
-        else {
+        } else {
             throw new BadRequestException("Wrong Credentials");
         }
     }
@@ -201,7 +228,7 @@ Minimum eight in length .{8,} (with the anchors)
     public ResponseUserDTO unfollowUser(HttpSession session, @PathVariable("id") long id) throws SQLException, BadRequestException {
         User user = validateUser(session);
         Optional<User> targetUser = userRepository.findById(id);
-        if (!targetUser.isPresent()){
+        if (!targetUser.isPresent()) {
             throw new BadRequestException("No such user");
         }
         userDao.unFollowUser(user, targetUser.get());
@@ -211,7 +238,7 @@ Minimum eight in length .{8,} (with the anchors)
     //GET MAPPINGS
     @SneakyThrows
     @GetMapping("/users/followers")
-    public List<ResponseUserDTO> getFollowers(HttpSession session)  {
+    public List<ResponseUserDTO> getFollowers(HttpSession session) {
         User user = validateUser(session);
         return (userDao.getFollowers(user));
     }
@@ -224,9 +251,10 @@ Minimum eight in length .{8,} (with the anchors)
 
     @SneakyThrows
     @GetMapping("users/find")
-    public List<ResponseUserDTO> findUser(@RequestBody SearchDTO dto){//finds users By firstName or LastName
-        List<User> result = userDao.searchUser(dto);
-        return ResponseUserDTO.usersToRespond(result);
+    public List<ResponseUserDTO> findUser(@RequestBody SearchDTO dto) {//finds users By firstName or LastName
+        List<ResponseUserDTO> result = userDao.searchUser(dto);
+        System.out.println(result.size());
+        return result;
     }
 
 
@@ -235,28 +263,29 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Passwords must match");
         }
         if (!password.matches(PASSWORD_REGEX)) {
-            throw  new BadRequestException("Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
+            throw new BadRequestException("Password must contains one upper letter, one lower letter, one digit, one special symbol form {#?!@$%^&*-_} and be at least 8 characters");
         }
-        if (!password.equals(confirmPassword.trim())){
-            throw  new BadRequestException("Password can`t have blank characters");
+        if (!password.equals(confirmPassword.trim())) {
+            throw new BadRequestException("Password can`t have blank characters");
         }
         return true;
     }
+
     private void validateDate(@RequestBody String date) throws BadRequestException, SQLException {
-        if (date.matches(DATE_REGEX)){
-            if (LocalDate.parse(date).isAfter(LocalDate.now())||
-                    LocalDate.parse(date).isBefore(MIN_DATE_REQUIRED_FOR_REGISTRATION)){
+        if (date.matches(DATE_REGEX)) {
+            if (LocalDate.parse(date).isAfter(LocalDate.now()) ||
+                    LocalDate.parse(date).isBefore(MIN_DATE_REQUIRED_FOR_REGISTRATION)) {
                 throw new BadRequestException("Invalid date");
             }
-        }
-        else{
+        } else {
             throw new BadRequestException("Invalid date");
         }
     }
+
     @SneakyThrows
-    private void validateGender(String gender,User user) {
-        if (!gender.equals(gender.toLowerCase())){
-            throw  new BadRequestException("Invalid gender input");
+    private void validateGender(String gender, User user) {
+        if (!gender.equals(gender.toLowerCase())) {
+            throw new BadRequestException("Invalid gender input");
         }
         user.setGender(userDao.setGender(gender));
     }

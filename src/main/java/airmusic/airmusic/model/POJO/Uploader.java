@@ -41,13 +41,13 @@ public class Uploader extends Thread {
     @Override
     public void run() {
         byte[] fileBytes = multipartFile.getBytes();
-        String songUrl = UPLOAD_PATH + multipartFile.getOriginalFilename() + System.currentTimeMillis();
-        Path path = Paths.get(songUrl);
+        String songUrl =  multipartFile.getOriginalFilename() + System.currentTimeMillis();
+        Path path = Paths.get(UPLOAD_PATH +songUrl);
         Files.write(path, fileBytes);
         Song song = new Song();
         song.setTitle(title);
         Genre genre = new Genre();
-        genre.setId(Long.valueOf(genre_id));
+        genre.setId(Long.parseLong(genre_id));
 
         song.setGenre(genre);
         song.setDescription(description);

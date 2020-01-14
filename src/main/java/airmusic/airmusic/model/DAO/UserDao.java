@@ -112,8 +112,8 @@ public class UserDao {
         }
     }
 
-    public List<User> searchUser(SearchDTO dto) throws SQLException {
-        String sql = "SELECT DISTINCT " +
+    public List<ResponseUserDTO> searchUser(SearchDTO dto) throws SQLException {
+        String sql = "SELECT " +
                 "u.id," +
                 "u.email," +
                 "u.password," +
@@ -123,32 +123,28 @@ public class UserDao {
                 "u.birth_date," +
                 "u.avatar," +
                 "u.activated," +
-                "g.name FROM users AS u " +
+                "g.name AS gender FROM users AS u " +
                 "JOIN genders AS g " +
                 "ON g.id=u.gender_id " +
-                "WHERE u.first_name LIKE ? " +
+                "WHERE u.first_name LIKE ?" +
                 "OR u.last_name LIKE ?;";
         try(Connection connection = jdbcTemplate.getDataSource().getConnection();
             PreparedStatement ps = connection.prepareStatement(sql)){
-            ps.setString(1,dto.getSearchingFor());
-            ps.setString(2,dto.getSearchingFor());
+            ps.setString(1,"%"+dto.getSearchingFor()+"%");
+            ps.setString(2,"%"+dto.getSearchingFor()+"%");
             ResultSet rs = ps.executeQuery();
-            List<User> searchResult = new ArrayList<>();
+            List<ResponseUserDTO> searchResult = new ArrayList<>();
             while (rs.next()){
-                User user = new User();
-                user.setId(rs.getLong(1));
-                user.setEmail(rs.getString(2));
-                user.setPassword(rs.getString(3));
-                user.setFirstName(rs.getString(4));
-                user.setLastName(rs.getString(5));
-                user.setActivated(rs.getBoolean(9));
-                user.setBirthDate(rs.getDate(7).toLocalDate());
-                user.setAvatar(rs.getString(8));
-                Gender gender = new Gender();
-                gender.setName(rs.getString(10));
-                gender.setId(rs.getShort(6));
-                user.setGender(gender);
-                searchResult.add(user);
+                searchResult.add(new ResponseUserDTO(
+                        rs.getLong("u.id"),
+                        rs.getString("u.email"),
+                        rs.getString("u.first_name"),
+                        rs.getString("u.last_name"),
+                        rs.getString("gender"),
+                        rs.getString("u.birth_date"),
+                        rs.getString("u.avatar"),
+                        rs.getBoolean("u.activated")
+                ));
             }
             return searchResult;
         }
