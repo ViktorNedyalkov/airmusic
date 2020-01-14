@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -145,9 +146,14 @@ public class CommentController extends AbstractController {
         if(songRepository.findById(songId) == null){
             throw new NotFoundException("Song not found");
         }
-
-        return ResponseCommentDTO.responseComments(commentRepository.findAllByTrack_Id(songId));
+        List<ResponseCommentDTO> response = new ArrayList<>();
+        List<Comment> getFromRepo = commentRepository.findAllByTrack_Id(songId);
+        for (Comment c : getFromRepo) {
+            response.add(new ResponseCommentDTO(c));
+        }
+        return response;
     }
+
     @SneakyThrows
     private Comment getCommentIfItExists(long commentId) {
         Comment comment = commentRepository.findById(commentId);
