@@ -108,7 +108,7 @@ Minimum eight in length .{8,} (with the anchors)
     }
 
     @PostMapping("/login")//ok
-    public String loginUser(@RequestBody LoginUserDTO dto, HttpSession session)
+    public ResponseUserDTO loginUser(@RequestBody LoginUserDTO dto, HttpSession session)
             throws BadRequestException {
         String email = dto.getEmail();
         String pass = dto.getPassword();
@@ -123,7 +123,7 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user);
-        return "Successfully login";
+        return new ResponseUserDTO(user);
     }
     @PostMapping("/logout")//ok
     public String logout(HttpSession session){
@@ -213,13 +213,13 @@ Minimum eight in length .{8,} (with the anchors)
     @GetMapping("/users/followers")
     public List<ResponseUserDTO> getFollowers(HttpSession session)  {
         User user = validateUser(session);
-        return ResponseUserDTO.usersToRespond(userDao.getFollowers(user));
+        return (userDao.getFollowers(user));
     }
 
     @GetMapping("/users/following")
     public List<ResponseUserDTO> getFollowing(HttpSession session) throws SQLException {
         User user = validateUser(session);
-        return ResponseUserDTO.usersToRespond(userDao.getFollowing(user));
+        return (userDao.getFollowing(user));
     }
 
     @SneakyThrows

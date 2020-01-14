@@ -1,6 +1,7 @@
 package airmusic.airmusic.model.DAO;
 
 import airmusic.airmusic.exceptions.*;
+import airmusic.airmusic.model.DTO.ResponseUserDTO;
 import airmusic.airmusic.model.DTO.SearchDTO;
 import airmusic.airmusic.model.POJO.Gender;
 import airmusic.airmusic.model.POJO.User;
@@ -25,8 +26,18 @@ public class UserDao {
     private static final String FOLLOW_USERS_SQL = "INSERT INTO users_follow_users VALUES(?,?);";
     private static final String USER_BY_EMAIL = "SELECT email FROM users WHERE email = ?";
     private static final String UNFOLLOW_USER_SQL = "DELETE FROM users_follow_users WHERE followed_id = ? AND follower_id =?;";
-    private static final String GET_FOLLOWING_SQL = "SELECT followed_id FROM users_follow_users WHERE follower_id =?";
-    private static final String GET_FOLLOWERS_SQL = "SELECT follower_id FROM users_follow_users WHERE followed_id =?";
+    private static final String GET_FOLLOWING_SQL ="SELECT DISTINCT u.id,u.email,u.first_name,u.last_name,u.birth_date,u.avatar,u.activated, g.name AS gender FROM users AS u " +
+            "JOIN users_follow_users as us " +
+            "ON us.followed_id = u.id " +
+            "JOIN genders AS g " +
+            "ON g.id =u.gender_id " +
+            "WHERE follower_id =?;";
+    private static final String GET_FOLLOWERS_SQL = "SELECT DISTINCT u.id,u.email,u.first_name,u.last_name,u.birth_date,u.avatar,u.activated, g.name AS gender FROM users AS u " +
+            "JOIN users_follow_users as us " +
+            "ON us.follower_id = u.id " +
+            "JOIN genders AS g " +
+            "ON g.id =u.gender_id " +
+            "WHERE followed_id =?;";
 
     public  boolean doesExist(String email) throws SQLException {
         try  (Connection connection = jdbcTemplate.getDataSource().getConnection();
@@ -58,22 +69,31 @@ public class UserDao {
             }
         }
     }
-    public  List<User> getFollowers(User user) throws SQLException {
+    public  List<ResponseUserDTO> getFollowers(User user) throws SQLException {
         return getFollowUsers(user, GET_FOLLOWERS_SQL);
     }
-    public  List<User> getFollowing(User user) throws  SQLException {
+    public  List<ResponseUserDTO> getFollowing(User user) throws  SQLException {
         return getFollowUsers(user, GET_FOLLOWING_SQL);
     }
 
-    private List<User> getFollowUsers(User user, String sql) throws SQLException {
+    private List<ResponseUserDTO> getFollowUsers(User user, String sql) throws SQLException {
 
         try (Connection connection = jdbcTemplate.getDataSource().getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1,user.getId());
             ResultSet rs = ps.executeQuery();
-            List<User> followers = new ArrayList<>();
+            List<ResponseUserDTO> followers = new ArrayList<>();
             while (rs.next()){
-                followers.add(userRepository.findById(rs.getLong(1)).get());
+                followers.add(new ResponseUserDTO(
+                        rs.getLong(1),
+                        rs.getString("u.email"),
+                        rs.getString("u.first_name"),
+                        rs.getString("u.last_name"),
+                        rs.getString("gender"),
+                        rs.getString("u.birth_date"),
+                        rs.getString("u.avatar"),
+                        rs.getBoolean("u.activated")
+                ));
             }
             return followers;
         }
