@@ -48,6 +48,7 @@ Minimum eight in length .{8,} (with the anchors)
     private static final String WRONG_PASSWORD_MAIL_SUBJECT = "ATTEMPT TO ENTER IN YOUR ACCOUNT";
     private static final String WRONG_PASSWORD_EMAIL_MSG = "Your account has been stopped for UNAUTHORIZED attempt to login " +
             "Follow the link to reactivate your account ";
+    private static final String REPLACER_FOR_SLASH = "-";
 
 
     @Autowired
@@ -99,8 +100,7 @@ Minimum eight in length .{8,} (with the anchors)
 
     private String activationCode(long id) {
         String code = BCrypt.hashpw(String.valueOf(id), BCrypt.gensalt());
-        code.replace('/', '-');
-        return code;
+        return code.replace("/", REPLACER_FOR_SLASH);
     }
 
     @SneakyThrows
@@ -108,9 +108,9 @@ Minimum eight in length .{8,} (with the anchors)
     public ResponseUserDTO activateUser(HttpSession session,
                                         @PathVariable("activationCode") String code,
                                         @PathVariable("userEmail") String email) {
-        String activationCode = code.replace('-', '/');
+        String activationCode = code.replace(REPLACER_FOR_SLASH, "/");
         Optional<User> user = userRepository.findByEmail(email);
-        if (!user.isPresent() || BCrypt.checkpw(String.valueOf(user.get().getId()), activationCode)) {
+        if (!user.isPresent() || !BCrypt.checkpw(String.valueOf(user.get().getId()), activationCode)) {
             throw new BadRequestException("No such user");
         }
         if (user.get().isActivated()) {
@@ -131,21 +131,11 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!BCrypt.checkpw(pass, user.get().getPassword())) {
-//            new MailSender(user.get().getEmail(), WRONG_PASSWORD_MAIL_SUBJECT,
-//                    WRONG_PASSWORD_EMAIL_MSG +
-//                            USER_ACTIVATION_PATH +
-//                            user.get().getEmail() +
-//                            "/" + activationCode(user.get().getId())).start();
-//            user.get().setActivated(false);
-//            userRepository.save(user.get());
+
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!user.get().isActivated()) {
-//            new MailSender(user.get().getEmail(),
-//                    USER_ACTIVATION_SUBJECT,
-//                    USER_ACTIVATION_PATH +
-//                            user.get().getEmail() +
-//                            "/" +activationCode(user.get().getId())).start();
+
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user.get());
