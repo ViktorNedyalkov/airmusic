@@ -3,10 +3,7 @@ package airmusic.airmusic.controller;
 import airmusic.airmusic.AmazonClient;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.SongDao;
-import airmusic.airmusic.model.DTO.ResponseSongDTO;
-import airmusic.airmusic.model.DTO.SongEditDTO;
-import airmusic.airmusic.model.DTO.SongSearchDTO;
-import airmusic.airmusic.model.DTO.SongWithLikesDTO;
+import airmusic.airmusic.model.DTO.*;
 import airmusic.airmusic.model.POJO.*;
 import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
@@ -25,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -55,10 +53,10 @@ public class SongController extends  AbstractController{
     @GetMapping("/songs/search")
     public List<ResponseSongDTO> searchForSongByUsername(@RequestBody @Valid SongSearchDTO songSearchDTO){
         if(songSearchDTO==null){
-            throw new BadRequestException();
+            throw new BadRequestException("Provide a valid json");
         }
         if(songSearchDTO.getTitle() == null){
-            throw new BadRequestException();
+            throw new BadRequestException("Provide a valid title");
         }
         return ResponseSongDTO.respondSongs(songRepository.findAllByTitleContaining(songSearchDTO.getTitle()));
     }
@@ -132,12 +130,18 @@ public class SongController extends  AbstractController{
     @PostMapping("/songs")
     public Song addSong(@RequestParam String description,
                           @RequestParam String title,
-                          @RequestParam long genre_id,
+                          @RequestParam String genre_id,
                           @RequestParam(value = "song")MultipartFile file,
                         HttpSession session) {
 
         User uploader = validateUser(session);
-        validateAddingOfSongParameters(description, title, genre_id);
+        if(genre_id == null || genre_id.isBlank()){
+
+            throw new BadRequestException("You have to specify a genre");
+        }
+
+        long genreId = Long.getLong(genre_id);
+        validateAddingOfSongParameters(description, title, genreId);
         if (file == null) {
             throw new BadRequestException("Please upload a file");
         }
@@ -153,7 +157,7 @@ public class SongController extends  AbstractController{
         song.setTitle(title);
 
         Genre genre = new Genre();
-        genre.setId(genre_id);
+        genre.setId(genreId);
 
         song.setGenre(genre);
 
@@ -174,7 +178,7 @@ public class SongController extends  AbstractController{
     //put mappings
 
     @PutMapping("song/{song_id}")
-    public ResponseSongDTO editSongDescription(@PathVariable("song_id") long song_id,
+    public ResponseSongDTO editSong(@PathVariable("song_id") long song_id,
                                                @RequestBody SongEditDTO songEditDTO,
                                                HttpSession session) throws NotLoggedUserException, NotFoundException {
 
@@ -266,9 +270,14 @@ public class SongController extends  AbstractController{
         return ResponseSongDTO.respondSongs(songDao.myFavouriteSongs(user));
     }
     @GetMapping("/songs/mySongs")
-    public List<ResponseSongDTO> mySongs(HttpSession session) throws NotLoggedUserException {
+    public List<SongWithoutUserDTO> mySongs(HttpSession session) throws NotLoggedUserException {
         User user = validateUser(session);
-        return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(user.getId()));
+        List<Song> songs = songRepository.findAllByUploader_Id(user.getId());
+        List<SongWithoutUserDTO> songWithoutUser = new ArrayList<>();
+        for(Song song : songs){
+            songWithoutUser.add(new SongWithoutUserDTO(song));
+        }
+        return songWithoutUser;
     }
 
     @GetMapping("/songs/find/{song_title}")

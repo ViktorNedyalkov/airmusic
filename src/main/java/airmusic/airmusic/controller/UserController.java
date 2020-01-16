@@ -51,6 +51,7 @@ Minimum eight in length .{8,} (with the anchors)
     private static final String WRONG_PASSWORD_EMAIL_MSG = "Your account has been stopped for UNAUTHORIZED attempt to login " +
             "Follow the link to reactivate your account ";
     private static final String REPLACER_FOR_SLASH = "-";
+    public static final int NUMBER_OF_GENDERS_IN_DB = 3;
 
 
     @Autowired
@@ -198,6 +199,21 @@ Minimum eight in length .{8,} (with the anchors)
                 !user.getEmail().equals(updatedUser.getEmail())) {
             throw new BadRequestException("User already exists with this e-mail");
         }
+        if(updatedUser.getEmail() == null){
+            updatedUser.setEmail(user.getEmail());
+        }
+        if(updatedUser.getBirthDate() == null){
+            updatedUser.setBirthDate(user.getBirthDate());
+        }
+        if(updatedUser.getFirstName() == null){
+            updatedUser.setFirstName(user.getFirstName());
+        }
+        if(updatedUser.getLastName() == null){
+            updatedUser.setLastName(user.getLastName());
+        }
+        if(updatedUser.getGender() > NUMBER_OF_GENDERS_IN_DB){
+            throw new BadRequestException("Please enter a valid gender");
+        }
         updatedUser.toUser(user);
         validateGender(updatedUser.getGender(), user);
         validateDate(updatedUser.getBirthDate().toString());
@@ -208,7 +224,7 @@ Minimum eight in length .{8,} (with the anchors)
     private void validateGender(long genderId, User user) {
         Optional<Gender> g = genderRepository.findById(genderId);
         if (g.isEmpty()){
-            throw new BadRequestException("Wrong gender type");
+            return;
         }
         user.setGender(g.get());
     }
