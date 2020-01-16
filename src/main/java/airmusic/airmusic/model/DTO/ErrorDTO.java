@@ -17,6 +17,7 @@ public class ErrorDTO {
 
     private String msg;
     private int status;
+    @JsonFormat(pattern = "yyyy-mm-dd  hh:mm:ss")
     private LocalDateTime time;
     private String exceptionType;
 }

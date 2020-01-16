@@ -4,7 +4,9 @@ import airmusic.airmusic.MailSender;
 import airmusic.airmusic.exceptions.*;
 import airmusic.airmusic.model.DAO.UserDao;
 import airmusic.airmusic.model.DTO.*;
+import airmusic.airmusic.model.POJO.Gender;
 import airmusic.airmusic.model.POJO.User;
+import airmusic.airmusic.model.repositories.GenderRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
 
 import lombok.SneakyThrows;
@@ -55,6 +57,8 @@ Minimum eight in length .{8,} (with the anchors)
     private UserDao userDao;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private GenderRepository genderRepository;
 
     @SneakyThrows
     @PostMapping("/register")
@@ -64,7 +68,6 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getConfirmPassword() == null
                 || dto.getFirstName() == null
                 || dto.getLastName() == null
-                || dto.getGender() == null
         ) {
             throw new BadRequestException("All fills are required");
         }
@@ -81,12 +84,15 @@ Minimum eight in length .{8,} (with the anchors)
                 || dto.getConfirmPassword().isEmpty()
                 || dto.getFirstName().isEmpty()
                 || dto.getLastName().isEmpty()
-                || dto.getGender().isEmpty()
         ) {
             throw new BadRequestException("All fills are required");
         }
         User user = dto.toUser();
-        validateGender(dto.getGender(), user);
+        Optional<Gender> g = genderRepository.findById(dto.getGender());
+        if (g.isEmpty()){
+            throw new BadRequestException("Wrong gender type");
+        }
+        user.setGender(g.get());
         validateDate(dto.getBirthDate().toString());
 
         userRepository.save(user);
@@ -131,7 +137,6 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!BCrypt.checkpw(pass, user.get().getPassword())) {
-
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!user.get().isActivated()) {
@@ -198,6 +203,14 @@ Minimum eight in length .{8,} (with the anchors)
         validateDate(updatedUser.getBirthDate().toString());
         userRepository.save(user);
         return new ResponseUserDTO(user);
+    }
+
+    private void validateGender(long genderId, User user) {
+        Optional<Gender> g = genderRepository.findById(genderId);
+        if (g.isEmpty()){
+            throw new BadRequestException("Wrong gender type");
+        }
+        user.setGender(g.get());
     }
 
     @PutMapping("users/pw")
@@ -272,12 +285,6 @@ Minimum eight in length .{8,} (with the anchors)
         }
     }
 
-    @SneakyThrows
-    private void validateGender(String gender, User user) {
-        if (!gender.equals(gender.toLowerCase())) {
-            throw new BadRequestException("Invalid gender input");
-        }
-        user.setGender(userDao.setGender(gender));
-    }
+
 
 }

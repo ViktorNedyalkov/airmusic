@@ -18,7 +18,7 @@ public class RegisterUserDTO {
     private String confirmPassword;
     private String firstName;
     private String lastName;
-    private String gender;
+    private long gender;
     private LocalDate birthDate;
 
     public User toUser(){
