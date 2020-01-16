@@ -7,24 +7,25 @@ import airmusic.airmusic.model.DTO.ResponseSongDTO;
 import airmusic.airmusic.model.DTO.SongEditDTO;
 import airmusic.airmusic.model.DTO.SongSearchDTO;
 import airmusic.airmusic.model.DTO.SongWithLikesDTO;
-import airmusic.airmusic.model.POJO.Comment;
-import airmusic.airmusic.model.POJO.Song;
-import airmusic.airmusic.model.POJO.Uploader;
-import airmusic.airmusic.model.POJO.User;
+import airmusic.airmusic.model.POJO.*;
 import airmusic.airmusic.model.repositories.SongRepository;
 import airmusic.airmusic.model.repositories.UserRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
+import javax.ws.rs.core.MediaType;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,8 @@ import java.util.Optional;
 public class SongController extends  AbstractController{
 
 
+    private static final String UPLOAD_PATH = "D:\\JAVA\\airmusic\\src\\main\\resources\\songs\\";
+    private static final int NUMBER_OF_GENRES = 4;
 
     @Autowired
     private AmazonClient amazonClient;
@@ -111,16 +114,28 @@ public class SongController extends  AbstractController{
         return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(userId));
     }
 
+    @SneakyThrows
+    @GetMapping(value = "songs/{song_id}/download", produces = MediaType.APPLICATION_OCTET_STREAM)
+    public FileSystemResource downloadSong(@PathVariable(value = "song_id") long songId, HttpServletResponse response){
+        Song song = songRepository.findById(songId);
+        if(song == null){
+            throw new NotFoundException("Song not found");
+        }
+
+        response.setContentType("audio/mpeg");
+        response.addHeader("Content-Disposition", "attachment; filename=" + song.getTitle()+".mp3");
+        return new FileSystemResource(UPLOAD_PATH + song.getTrackUrl());
+    }
 
     //post mappings
     @SneakyThrows
     @PostMapping("/songs")
-    public String addSong(@RequestParam String description,
+    public Song addSong(@RequestParam String description,
                           @RequestParam String title,
-                          @RequestParam String genre_id,
+                          @RequestParam long genre_id,
                           @RequestParam(value = "song")MultipartFile file,
                         HttpSession session) {
-        System.out.println(genre_id);
+
         User uploader = validateUser(session);
         validateAddingOfSongParameters(description, title, genre_id);
         if (file == null) {
@@ -129,9 +144,31 @@ public class SongController extends  AbstractController{
         if (file.getContentType() == null || !file.getContentType().equalsIgnoreCase("audio/mpeg")) {
             throw new BadRequestException("Please upload an audio file");
         }
-        Thread uploadToAmazon = new Uploader(file, amazonClient, description, genre_id, title, uploader, songRepository);
+
+        byte[] fileBytes = file.getBytes();
+        String songUrl =  file.getOriginalFilename() + System.currentTimeMillis();
+        Path path = Paths.get(UPLOAD_PATH +songUrl);
+        Files.write(path, fileBytes);
+        Song song = new Song();
+        song.setTitle(title);
+
+        Genre genre = new Genre();
+        genre.setId(genre_id);
+
+        song.setGenre(genre);
+
+        song.setDescription(description);
+        song.setTrackUrl(songUrl);
+        System.out.println(song.getTrackUrl());
+        song.setUploader(uploader);
+        song.setUploadDate(new Date());
+        song.setAmazonUrl(null);
+        songRepository.save(song);
+
+
+        Thread uploadToAmazon = new Uploader(file, amazonClient, songRepository, song);
         uploadToAmazon.start();
-        return "Your song has started uploading";
+        return song;
     }
 
     //put mappings
@@ -150,8 +187,11 @@ public class SongController extends  AbstractController{
         if(songEditDTO == null){
             throw new BadRequestException("Please enter a correct json");
         }
+        if(songEditDTO.getTitle() == null){
+            songEditDTO.setTitle(song.getTitle());
+        }
         if(songEditDTO.getDescription() == null){
-            throw new BadRequestException("Please pass a valid value");
+            songEditDTO.setDescription(song.getDescription());
         }
         if(user.getId() != song.getUploader().getId()){
             throw new NotLoggedUserException("You are not the owner of this song");
@@ -159,6 +199,7 @@ public class SongController extends  AbstractController{
 
 
         song.setDescription(songEditDTO.getDescription());
+        song.setTitle(songEditDTO.getTitle());
         songRepository.save(song);
         return new ResponseSongDTO(song);
     }
@@ -182,7 +223,6 @@ public class SongController extends  AbstractController{
         //is user the same as uploader
         Song song = songRepository.findById(song_id);
         if(user.getId() != song.getUploader().getId()){
-            //todo maybe change to another exception
             throw new NotLoggedUserException("You are not the owner of this song");
         }
         //delete song
@@ -240,15 +280,16 @@ public class SongController extends  AbstractController{
         return ResponseSongDTO.respondSongs(songRepository.findAllByUploader_Id(id));
     }
 
-    public void validateAddingOfSongParameters(String description, String title, String genre_id){
+    private void validateAddingOfSongParameters(String description, String title, long genre_id){
         if(description == null || description.isBlank()){
             throw new BadRequestException("You have to add a description");
         }
         if(title == null || title.isBlank()){
             throw new BadRequestException("You have to add a title");
         }
-        if(genre_id == null || genre_id.isBlank()){
-            throw new BadRequestException("You have to add a genre");
+
+        if(genre_id <= 0 || genre_id > NUMBER_OF_GENRES){
+            throw new BadRequestException("Genre id is invalid");
         }
     }
 }

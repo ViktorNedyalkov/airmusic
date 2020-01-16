@@ -16,4 +16,5 @@ public class SongEditDTO {
     @NotNull
     @NotEmpty
     private String description;
+    private String title;
 }

@@ -131,21 +131,9 @@ Minimum eight in length .{8,} (with the anchors)
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!BCrypt.checkpw(pass, user.get().getPassword())) {
-//            new MailSender(user.get().getEmail(), WRONG_PASSWORD_MAIL_SUBJECT,
-//                    WRONG_PASSWORD_EMAIL_MSG +
-//                            USER_ACTIVATION_PATH +
-//                            user.get().getEmail() +
-//                            "/" + activationCode(user.get().getId())).start();
-//            user.get().setActivated(false);
-//            userRepository.save(user.get());
             throw new BadRequestException("Wrong e-mail or password");
         }
         if (!user.get().isActivated()) {
-//            new MailSender(user.get().getEmail(),
-//                    USER_ACTIVATION_SUBJECT,
-//                    USER_ACTIVATION_PATH +
-//                            user.get().getEmail() +
-//                            "/" +activationCode(user.get().getId())).start();
             throw new BadRequestException("Check your email and activate your profile");
         }
         session.setAttribute(LOGGED, user.get());
